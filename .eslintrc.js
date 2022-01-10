@@ -7,7 +7,7 @@ module.exports = {
   env: {
     browser: false,
     node: true,
-    es6: true
+    es6: true,
   },
   extends: 'standard',
   // required to lint *.vue files
@@ -39,7 +39,6 @@ module.exports = {
     getPage: true,
     requirePlugin: true,
     getCurrentPages: true,
-    __wxConfig: true,
-    plus: true
+    __wxConfig: true
   }
 }

@@ -2,17 +2,14 @@
   <div class='system-msg'>
     <m-scroll ref='mScroll' v-model="pages" @getData='getData' nativePullLoading>
       <ul class="msg-list">
-        <li class="msg-item" :class="'msg-item-' + (i + 1)" v-for="(item, i) in list" :key="i" @click='readDetail(item)'>
+        <li class="msg-item" v-for="(item, i) in list" :key="i">
           <div class="msg-item-name">
             <text class="msg-item-name-h1">{{item.title}}</text>
-            <text class="msg-item-name-span">{{item.create_time}}</text>
+            <!-- <span>{{$dateFilter(item.created_at)}}</span> -->
+            <text class="msg-item-name-span">{{item.created_at}}</text>
             <i class="msg-item-name-point" v-if="!item.is_read"></i>
           </div>
           <text class="msg-item-content">{{item.content}}</text>
-          <div class="msg-item-click v-ob" v-if="item.type == 'page'">
-            <text class="msg-item-click-text">查看详情</text>
-            <image class="msg-item-click-arrow" src='../../static/arrow.png'/>
-          </div>
         </li>
       </ul>
     </m-scroll>
@@ -20,7 +17,7 @@
 </template>
 
 <script>
-import {getMsgListApi} from '../../api/mine.js'
+// import {getSystemMsgListApi, readSystemMsgApi} from '../../api/msg'
 import mScroll from '../../components/m-scroll/index.nvue'
 
 export default {
@@ -29,7 +26,10 @@ export default {
   },
   data () {
     return {
-      list: [],
+      list: [
+        {title: '系统通知', created_at: '2021-12-13 18:00:29', content: 'GoodIns是中国移动通信集团有限公司出资成立的全资子公司。公司按照中国移动整体战略布局，围绕“物联网业务服务的支撑者、专用模组和芯片的提供者、物联网专用产品的推动者”的战略定位。'},
+        {title: '系统通知', created_at: '2021-12-13 18:00:29', content: 'GoodIns是中国移动通信集团有限公司出资成立的全资子公司。公司按照中国移动整体战略布局，围绕“物联网业务服务的支撑者、专用模组和芯片的提供者、物联网专用产品的推动者”的战略定位。'}
+      ],
       pages: {
         page: 1,
         pageSize: 10
@@ -47,28 +47,19 @@ export default {
   },
   methods: {
     getData () {
-      if (this.pages.page === 1) {
-        this.list = []
-      }
-      getMsgListApi(this.pages).then(({data}) => {
-        this.list = [...this.list, ...data.list]
-        this.pages.last_create_time = data.last_create_time
-        this.$refs.mScroll.loadSuccess({
-          total: this.list.length,
-          hasNextPage: data.has_more
-        })
-      })
-    },
-    readDetail (item) {
-      if (item.type == 'page') {
-        let query = []
-        for (const key in item.extra) {
-          query.push(`${key}=${item.extra[key]}`)
-        }
-        uni.navigateTo({
-          url: `/${item.path}?${query.join('&')}`
-        })
-      }
+      // if (this.pages.page === 1) {
+      //   this.list = []
+      // }
+      // getSystemMsgListApi(this.pages).then(({data}) => {
+      //   data.list.forEach(item => {
+      //     if (!item.is_read) {
+      //       readSystemMsgApi({id: item.id})
+      //     }
+      //   })
+      //   this.list = [...this.list, ...data.list]
+      //   data.hasNextPage = this.list.length < data.total
+      //   this.$refs.mScroll.loadSuccess(data)
+      // })
     }
   }
 }
@@ -82,16 +73,13 @@ export default {
     /* #endif */
   }
   .msg-list {
-    padding: 0 25rpx;
+    padding: 25rpx;
   }
   .msg-item {
     background: #fff;
     padding: 20rpx 25rpx;
-    margin: 0 0 25rpx;
+    margin-bottom: 25rpx;
     border-radius: 20rpx;
-    &-1 {
-      margin-top: 25rpx;
-    }
     &-name {
       flex-direction: row;
       align-items: center;
@@ -122,22 +110,6 @@ export default {
       color: #666;
       font-size: 28rpx;
       line-height: 42rpx;
-    }
-    &-click {
-      padding-top: 20rpx;
-      margin-top: 20rpx;
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      border-top: 1px solid $border;
-      &-text {
-        color: #888;
-        font-size: 28rpx;
-      }
-      &-arrow {
-        width: 24rpx;
-        height: 24rpx;
-      }
     }
   }
 </style>

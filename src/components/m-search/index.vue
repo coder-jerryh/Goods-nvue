@@ -1,6 +1,6 @@
 <template>
   <div class="m-search" @click="$emit('click')" :style="{margin}">
-    <!-- <img class="searchIcon" src="../../assets/image/search.png"> -->
+    <img class="searchIcon" src="../../assets/image/search.png">
     <input
       confirm-type='search'
       placeholder="输入关键词搜索"

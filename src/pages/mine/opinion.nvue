@@ -1,40 +1,26 @@
 <template>
 	<div class="container">
 		<div class="textarea-wrap">
-			<textarea class="textarea" v-model="content" maxlength="300" placeholder="请输入您的建议或意见" />
-			<text class="fontNums">{{content.length}}/{{300}}</text>
+			<textarea class="textarea" v-model="value" maxlength="300" placeholder="请输入您的建议或意见" />
+			<text class="fontNums">{{value.length}}/{{300}}</text>
 		</div>
-		<button class="btn" :loading='loading' @click="submit"><text class="btn-text">提交反馈</text></button>
+		<button class="btn" @click="submit"><text class="btn-text">提交反馈</text></button>
 	</div>
 </template>
 
 <script>
 	import {Toast} from '../../utils/popup.js'
-  import {feedbackApi} from '../../api/mine.js'
 	export default {
 		data() {
 			return {
-				content: '',
-        loading: false
+				value: ''
 			}
 		},
 		methods: {
 			submit () {
-				if (!this.content) {
+				if (!this.value) {
 					return Toast('warning', '请输入内容')
 				}
-        this.loading = true
-        const params = {
-          content: this.content,
-          type: 'feedback'
-        }
-        feedbackApi(params).then(() => {
-          Toast('success', '反馈成功！', () => {
-            uni.navigateBack()
-          })
-        }).finally(() => {
-          this.loading = false
-        })
 			}
 		}
 	}

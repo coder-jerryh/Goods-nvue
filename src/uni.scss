@@ -1,10 +1,9 @@
-@import './assets/style/border.scss';
 // 样式重置
 $color: #FF9B35;
 $bgColor: linear-gradient(270deg, #FF701D 0%, #F9AD82 100%);
 $black: #1b1d20;
 $border: #e4e7ed;
-$red: #ff6633;
+$red: #FA3534;
 $orange: #FF7321;
 $bg: #f7f8f9;
 $green: #03B349;
@@ -38,7 +37,6 @@ $green: #03B349;
 .disabled {
 	opacity: .7;
 }
-
 // 文本溢出
 @mixin line($lineNum, $width: 100%) {
   /* 一行时 */

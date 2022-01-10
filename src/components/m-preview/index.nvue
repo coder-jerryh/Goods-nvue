@@ -1,25 +1,13 @@
 <template>
   <div class="m-preview" :style="{opacity}" @click="close" @touchmove.stop.prevent v-if="showPreview">
 		<div class="m-preview-title" :style="{paddingTop: customNav ? (navTop + 50 + 'rpx') : '35rpx'}">
-			<m-image :src='avatar' :imageStyle="{width: '45rpx', height: '45rpx', borderRadius: '100rpx'}"/>
+			<m-image :src='avatar' :imageStyle="{width: '45rpx', height: '45rpx', borderRadius: '50%'}"/>
 			<text class="m-preview-h1">{{nickname}}</text>
 			<image class="m-preview-close" src="../../static/close.png" :style="{top: customNav ? (navTop + 45 + 'rpx') : '30rpx'}"></image>
 		</div>
-		<swiper :duration='duration' class="m-preview-swiper" @change='change' :current='swiperCurrent'>
+		<swiper class="m-preview-swiper" @change='change' :current='swiperCurrent'>
 			<swiper-item class="m-preview-swiper-item" v-for="(item, i) in list" :key='i'>
-        <movable-area class="movable-area"  :style="{minHeight: height}" @longpress="longTap(item)">
-          <movable-view
-            class="movable-view"
-             :style="{minHeight: height}"
-            direction="all"
-            scale-value="1"
-            scale-min="1"
-            scale="true"
-            scale-max="4"
-          >
-            <m-image :src='item' :imageStyle="{width: '750rpx'}" mode='widthFix' showLoading/>
-          </movable-view>
-        </movable-area>
+				<m-image :src='item' :imageStyle="{width: '750rpx'}" mode='widthFix' showLoading/>
 			</swiper-item>
 		</swiper>
 		<text class="m-preview-index">{{current}}/{{list.length}}</text>
@@ -37,7 +25,6 @@
 		},
 		data () {
 			return {
-        duration: 0,
 				opacity: 0,
 				current: 1,
 				swiperCurrent: 1,
@@ -45,47 +32,22 @@
 				showPreview: false,
 				nickname: '',
 				avatar: '',
-				navTop: 0,
-        height: '100%'
+				navTop: 0
 			}
 		},
 		mounted () {
 			this.setStyle()
 		},
 		methods: {
-      longTap (item) {
-        const that = this
-				const itemList = ['保存图片']
-				uni.showActionSheet({
-					itemList,
-					success ({tapIndex}) {
-						const menu = itemList[tapIndex]
-						if (menu === '保存图片') {
-              uni.setStorageSync('imageList', that.list)
-				      uni.navigateTo({url: '/pages/homePage/downloadImage'})
-						} else {
-							
-						}
-					}
-				})
-      },
 			previewImage (list, current, info) {
-        this.duration = 0
-        this.list = [...list]
-        // 安卓从第>1张打开，都放在第一张位置
-        if (getApp().globalData.platform === 'android' && current > 0) {
-          const currentImage = this.list.splice(current, 1)[0]
-          this.list.unshift(currentImage)
-          current = 0
-        }
-        this.current = current + 1
-        this.swiperCurrent = current
-				this.nickname = info.blog.name || info.blog.remark_name
-				this.avatar = info.blog.avatar
+				this.current = current + 1
+				this.swiperCurrent = current
+				this.list = list
+				this.nickname = info.nickname
+				this.avatar = info.avatar
 				this.showPreview = true
 				this.$nextTick(() => {
 					this.opacity = 1
-          this.duration = 500
 				})
 			},
 			close () {
@@ -106,14 +68,12 @@
 				// #ifdef APP-PLUS
 				// 导航栏高度
 				this.navTop = safeArea.top
-				this.height = safeArea.height - safeArea.top + 4 + 'px'
 				// 导航栏电池、时间颜色
 				plus.navigator.setStatusBarStyle('dark') //只支持dark和light
 				// #endif
 				
 				// #ifdef MP-WEIXIN
 				// 导航栏高度
-				this.height = safeArea.height - safeArea.top - 45 - 8 + 'px'
 				this.navTop = uni.getMenuButtonBoundingClientRect().top + 8
 				// #endif
 			}
@@ -131,7 +91,6 @@
 		transition-timing-function: ease;
 		align-items: center;
 		justify-content: center;
-    z-index: 999;
 		&-title {
 			flex-direction: row;
 			align-items: center;
@@ -153,9 +112,10 @@
 		&-swiper {
 			flex: 1;
 			width: 750rpx;
-      &-item {
-			  width: 750rpx;
-      }
+			&-item {
+				align-items: center;
+				justify-content: center;
+			}
 		}
 		&-index {
 			position: fixed;
@@ -167,12 +127,4 @@
 			font-size: 30rpx;
 		}
 	}
-  .movable-area,
-  .movable-view {
-    width: 750rpx;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
 </style>

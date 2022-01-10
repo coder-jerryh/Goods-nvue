@@ -1,69 +1,78 @@
 import { httpRequest } from '../utils/request.js'
-// 用户协议
-export const getProtocolApi = () => {
-  return httpRequest('get', '/protocol?type=body', {noIntercept: true})
+
+// 充值
+export const topUpApi = (data) => {
+  return httpRequest('post', `/enterprise/recharge`, data)
 }
-// 隐私协议
-export const getPrivacyPolicyApi = () => {
-  return httpRequest('get', '/privacyPolicy?type=body', {noIntercept: true})
-}
-// 反馈
-export const feedbackApi = (data) => {
-  return httpRequest('post', '/feedback', data)
-}
-// 推荐
-export const recommendApi = (data) => {
-  return httpRequest('post', '/recommend', data)
+// 提现
+export const withdrawlApi = (data) => {
+  return httpRequest('post', `/enterprise/withdrawal`, data)
 }
 // 用户最新基本信息
 export const getUserInfoApi = () => {
-  return httpRequest('post', '/getUserInfo', {hideLoading: true})
+  return httpRequest('post', '/enterprise/get_enterprise_info', {hideLoading: true})
 }
-// 获取积分兑换套餐列表
-export const getScoreComboListApi = () => {
-  return httpRequest('post', '/getMembershipList')
+// 登录
+export const loginApi = (data) => {
+  return httpRequest('post', '/enterprise/login', data)
 }
-// 获取积分兑换套餐列表
-export const exchangeVipApi = (data) => {
-  return httpRequest('post', '/buyMembership', data)
+// 注册
+export const registerLoginApi = (data) => {
+  return httpRequest('post', '/enterprise/register', data)
 }
-// 获取收藏帖子列表
-export const getCollectBlogListApi = (data) => {
-  return httpRequest('post', '/myFollowPost', data)
+// 绑定手机
+export const bindPhoneApi = (data) => {
+  return httpRequest('post', '/enterprise/set_phone', data)
 }
-// 获取点赞帖子列表
-export const getLikeBlogListApi = (data) => {
-  return httpRequest('post', '/myLikePost', data)
+
+/** @流水 **/
+// 流水列表
+export const getFinancialListApi = (data) => {
+  return httpRequest('post', `/enterprise/financial_list`, data)
 }
-// 获取订阅博主列表
-export const getMyFocuslogListApi = (data) => {
-  return httpRequest('post', '/myFollowBlog', data)
+// 流水明细
+export const getFinancialDetailApi = (data) => {
+  return httpRequest('post', `/enterprise/financial_detail`, data)
 }
-// 积分记录
-export const getMyScoreNoteListApi = (data) => {
-  return httpRequest('post', '/getIntegralLog', data)
+
+/** @隐私 **/
+// 获取隐私
+export const getPrivacyApi = () => {
+  return httpRequest('post', '/get_privacy_policy')
 }
-// 修改手机号
-export const editPhoneApi = (data) => {
-  return httpRequest('post', '/editPhone', data)
+
+/** @协议 **/
+// 获取协议
+export const getAgreementApi = () => {
+  return httpRequest('post', '/get_service_to_user')
 }
-// 修改手机号
-export const bindWeixinApi = (data) => {
-  return httpRequest('post', '/bindWeixin', data)
-}
-// 修改手机号
-export const editUserInfoApi = (data) => {
-  return httpRequest('post', '/editUserInfo', data)
-}
-// 关于我们
+
+/** @关于我们 **/
+// 获取关于我们
 export const getAboutUsApi = () => {
-  return httpRequest('get', '/getAboutUs')
+  return httpRequest('post', '/get_about_user')
 }
-// 关于我们
-export const getMsgListApi = (data) => {
-  return httpRequest('post', '/getNoticeList', data)
+
+// ----------------------------------
+
+// 详情
+export const getBannerApi = (type) => {
+  return httpRequest('get', `/mp/banner/randomBanner/${type}`)
 }
-// 注销账号
-export const closeAccountApi = () => {
-  return httpRequest('post', '/closeAccount')
+// 获奖记录
+export const getMyPrizeListApi = (data) => {
+  return httpRequest('post', '/mp/u/lottery/list/log/win', data)
+}
+// 列表-用户-我参与的
+export const getMyjoinedListApi = (data) => {
+  return httpRequest('post', '/mp/activity/list/joined', data)
+}
+// 列表-想去清单
+export const getMyWantListApi = (data) => {
+  return httpRequest('post', '/mp/merchant/listForWant', data)
+}
+// ---------- 拼多多订单 ----------
+// 列表-我的订单
+export const getMallOrderListApi = (data) => {
+  return httpRequest('post', '/mp/pdd/list/order', data)
 }

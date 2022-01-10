@@ -16,8 +16,11 @@ const store = new Vuex.Store({
       path: '/pages/homePage/index', // 相对的路径
       imageUrl: ''
     },
-    alertFlag: false,
-    wxappIsPass: 1
+    // 是否处于登录中
+    logining: false,
+    keyboardHeight: uni.getStorageSync('keyboardHeight') || 0,
+    userLocation: {},
+    alertFlag: false
   },
   actions: {
     // 获取用户信息
@@ -75,22 +78,38 @@ const store = new Vuex.Store({
         uni.removeStorageSync('userInfo')
       } else {
         state.userInfo = { ...state.userInfo, ...info }
+        // 有商家信息
+        if (info.merchant) {
+          // 已通过、二次编辑
+          state.userInfo.isMerchant = [2, 4].includes(info.merchant.audit)
+          state.userInfo.merchant = {
+            ...info.merchant,
+            labelList: typeof info.merchant.labels === 'string' ? info.merchant.labels.split(',') : info.merchant.labels,
+            pictures: typeof info.merchant.pictures === 'string' ? info.merchant.pictures.split(',') : info.merchant.pictures
+          }
+        }
         uni.setStorageSync('userInfo', state.userInfo)
       }
     },
     // 设置分享内容
     setShare (state, info) {
+      const {imageUrl} = info
       state.shareInfo = info
+      if (imageUrl && !imageUrl.includes('http')) {
+        state.shareInfo.imageUrl = config.fileUrl + imageUrl
+      }
+    },
+    setKeyboardHeight (state, height) {
+      state.keyboardHeight = height
+      uni.setStorageSync('keyboardHeight', height)
+    },
+    // 保存用户距离
+    saveUserLocation (state, userLocation) {
+      state.userLocation = userLocation
     },
     changeAlert (state, flag) {
       state.alertFlag = flag
-    },
-    changePass (state, flag) {
-      state.wxappIsPass = flag
     }
-  },
-  getters: {
-    isLogin: (state) => Boolean(state.userInfo && state.userInfo.token)
   }
 })
 export default store

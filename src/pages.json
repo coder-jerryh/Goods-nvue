@@ -25,22 +25,16 @@
 		{
 			"path": "pages/find/index",
 			"style": {
+				"enablePullDownRefresh": true,
 				"navigationStyle": "custom",
 				"app-plus": {
 					"titleNView": false
 				}
 			}
 		},
-    {
-			"path": "pages/homePage/agreement",
-			"style": {
-				"navigationBarTitleText": "个人信息保护指引"
-			}
-		},
 		{
 			"path": "pages/score/index",
 			"style": {
-				"enablePullDownRefresh": true,
 				"navigationBarTitleText": "积分任务"
 			}
 		},
@@ -71,15 +65,13 @@
 		{
 			"path": "pages/mine/myFocus",
 			"style": {
-				"enablePullDownRefresh": true,
-				"navigationBarTitleText": "我的订阅"
+				"navigationBarTitleText": "我的关注"
 			}
 		},
 		{
 			"path": "pages/mine/scoreNote",
 			"style": {
-				"enablePullDownRefresh": true,
-				"navigationBarTitleText": "积分记录"
+				"navigationBarTitleText": "我的关注"
 			}
 		},
     {
@@ -112,19 +104,13 @@
 		{
 			"path": "pages/mine/recommend",
 			"style": {
-				"navigationBarTitleText": "推荐"
+				"navigationBarTitleText": "博主推荐"
 			}
 		},
 		{
 			"path": "pages/mine/opinion",
 			"style": {
 				"navigationBarTitleText": "意见反馈"
-			}
-		},
-    {
-			"path": "pages/mine/report",
-			"style": {
-				"navigationBarTitleText": "举报"
 			}
 		},
     {
@@ -188,7 +174,7 @@
 		"current": 0,
 		"list": [{
 			"name": "",
-			"path": "pages/homePage/index",
+			"path": "pages/mine/index",
 			"query": ""
 		}]
 	}

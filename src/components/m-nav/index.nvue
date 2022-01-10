@@ -1,6 +1,6 @@
 <template>
   <nav class="m-nav" :style="{paddingTop: showBack ? 0 : navTop + 'px', position, background}">
-		<image v-if="showBack" @click="back" class="m-nav-back v-ob" :style="{top: navTop + 7 + 'px'}" src="../../static/back.png"/>
+		<image v-if="showBack" @click="back" class="m-nav-back v-ob" :style="{top: navTop + 2 + 'px'}" src="../../static/back.png"/>
 		<slot/>
 	</nav>
 </template>
@@ -40,12 +40,14 @@
 				// #ifdef APP-PLUS
 				// 导航栏高度
 				this.navTop = safeArea.top
+				console.log(safeArea)
 				// 导航栏电池、时间颜色
 				plus.navigator.setStatusBarStyle('dark') //只支持dark和light
 				// #endif
 				
 				// #ifdef MP-WEIXIN
 				// 导航栏高度
+				console.log(uni.getMenuButtonBoundingClientRect())
 				this.navTop = uni.getMenuButtonBoundingClientRect().top
 				// #endif
 			}
@@ -62,8 +64,8 @@
 		&-back {
 			position: fixed;
 			left: 28rpx;
-			width: 40rpx;
-			height: 40rpx;
+			width: 50rpx;
+			height: 50rpx;
 			z-index: 1;
 		}
 	}

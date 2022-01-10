@@ -15,9 +15,9 @@
     <!-- 空布局 -->
     <div class="m-scroll-empty" v-if='isEmpty' :style="{height: emptyHeight}">
       <!-- 自己更换图片哟 -->
-      <image class="m-scroll-empty-icon" src="../../static/empty.png">
-      <button v-if="showLogin" class="m-scroll-empty-btn" @click="$toUrl('/pages/mine/login')">去登录</button>
-      <text v-else class='m-scroll-empty-p'>暂无数据~</text>
+      <image class="m-scroll-empty-icon" src="./empty.png">
+      <button v-if="showLogin" class="m-scroll-empty-btn" @click="$toUrl('/pages/login/index')">去登录</button>
+      <p v-else class='m-scroll-empty-p'>暂无数据~</p>
     </div>
   </div>
 </template>
@@ -43,7 +43,7 @@ export default {
     },
     emptyHeight: {
       type: String,
-      default: 'auto'
+      default: '80vh'
     },
     // 原生下拉刷新动画
     nativePullLoading: Boolean
@@ -79,9 +79,7 @@ export default {
       this.isEmpty = false
       // 加载时间
       this.loadingTime = loadingTime ? 800 : 0
-      const pages = {...this.pages, page: 1}
-      delete pages.last_create_time
-      this.$emit('input', pages)
+      this.$emit('input', {...this.pages, page: 1})
       this.$emit('getData')
     },
     // 上拉加载
@@ -95,6 +93,7 @@ export default {
     },
     // 加载成功
     loadSuccess (data) {
+			console.log('完成✅')
       this.showLogin = false
       // 结束下拉刷新
       uni.stopPullDownRefresh()
@@ -146,7 +145,7 @@ export default {
 			flex-direction: row;
       justify-content: center;
       align-items: center;
-      padding: 30rpx 0;
+      height: 100rpx;
       overflow: hidden;
     }
 		&-pullLoading{
@@ -169,19 +168,18 @@ export default {
 		}
     // 空布局
     &-empty{
-      padding-top: 400rpx;
-      align-items: center;
-      justify-content: center;
-      &-icon{
-        width: 350rpx;
-        height: 300rpx;
+      @extend .xy-center;
+      &-empty-icon{
+        width: 329rpx;
+        height: 240rpx;
       }
-      &-p{
-        color: #c0c4cc;
+      &-empty-p{
+        margin-top: 30rpx;
+        color: #999;
         font-size: 26rpx
       }
 			// 去登录
-			&-btn {
+			&-empty-btn {
 				width: 200rpx;
 				height: 68rpx;
 				color: $color;

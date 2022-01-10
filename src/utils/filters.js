@@ -1,26 +1,8 @@
 import { defData } from '../constant'
-import {Toast} from './popup'
+import Vue from 'vue'
 const VideoType = [
   'avi', 'wmv', 'mpg', 'mpeg', 'mov', 'rm', 'ram', 'swf', 'flv', 'mp4', 'wma', 'avi', 'rm', 'rmvb', 'flv', 'mpg', 'mkv'
 ]
-const dateFormart = (date, fmt) => {
-  const DateObjs = {
-    'M+': date.getMonth() + 1, // 月份
-    'd+': date.getDate(), // 日
-    'h+': date.getHours(), // 小时
-    'm+': date.getMinutes(), // 分
-    's+': date.getSeconds(), // 秒
-    'q+': Math.floor((date.getMonth() + 3) / 3), // 季度
-    S: date.getMilliseconds() // 毫秒
-  }
-  if (/(y+)/.test(fmt)) {
-    fmt = fmt.replace(RegExp.$1, (date.getFullYear() + '').substr(4 - RegExp.$1.length))
-  }
-  for (var key in DateObjs) {
-    if (new RegExp('(' + key + ')').test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length === 1) ? (DateObjs[key]) : (('00' + DateObjs[key]).substr(('' + DateObjs[key]).length)))
-  }
-  return fmt
-}
 // 两个数组对象根据某属性取不同项
 export const twoArrFilter = (arr1, arr2, type) => {
   let arr = []
@@ -47,7 +29,7 @@ export const dateFilter = (time, format = 'yyyy-MM-dd hh:mm:ss') => {
   if (time !== 'now' && String(time).length < 13) {
     time = time * 1000
   }
-  return time === 'now' ? dateFormart(new Date(), format) : dateFormart(new Date(time), format)
+  return time === 'now' ? new Date().Format(format) : new Date(time).Format(format)
 }
 // 日期距离当前时间
 export const dateFromNow = (date) => {
@@ -257,7 +239,7 @@ export function copyText (data, tips = '复制成功！') {
     uni.setClipboardData({
       data,
       success: () => {
-        Toast('warning', tips)
+        Vue.prototype.$Toast('success', tips)
       }
     })
     // #endif
@@ -273,7 +255,7 @@ export function copyText (data, tips = '复制成功！') {
     textarea.setSelectionRange(0, data.length)
     document.execCommand('copy')
     textarea.remove()
-    Toast('warning', tips)
+    Vue.prototype.$Toast('success', tips)
     // #endif
   })
 }

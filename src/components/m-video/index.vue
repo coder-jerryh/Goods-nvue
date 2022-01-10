@@ -74,11 +74,8 @@ export default {
     end () {
       this.pause = true
     },
-    clickVideo (e) {
+    clickVideo () {
       this.$toUrl(`/pages/common/videoDetail?src=${this.url}`)
-      // #ifdef APP-NVUE
-      e.stopPropagation()
-      // #endif
     },
     loadSuccess (e) {
       this.duration = this.$dateFilter(Math.round(e.detail.duration) * 1000, 'mm:ss')

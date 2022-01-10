@@ -1,16 +1,16 @@
 <template>
 	<div class="container">
-		<m-scroll ref='mScroll' v-model='pages' @getData='getData'>
+    <m-scroll>
       <ul class='focus-list'>
-        <li class='focus-list-item' v-for="(item, index) in list" :key='item.id' @click="toBloger(item)">
+        <li class='focus-list-item' v-for="(item, index) in list" :key='index' @click='cancelFocus'>
           <!-- 头像 -->
-          <m-image class="focus-list-avatar" :src="item.avatar" :imageStyle="{width: '110rpx', height: '110rpx', borderRadius: '100rpx'}"/>
+          <m-image @click="toBloger(item)" class="focus-list-avatar" :src="item.avatar" :imageStyle="{width: '110rpx', height: '110rpx', borderRadius: '50%'}"/>
           <div class="focus-list-title">
-            <text class="focus-list-h1">{{item.name}}</text>
-            <text class="focus-list-span">{{item.remark_name}}</text>
+            <text class="focus-list-h1">{{item.nickname}}</text>
+            <text class="focus-list-span">{{item.createTime}}</text>
           </div>
-          <button class="focus-list-btn" @click.stop="focusBloger($event, item)">
-            <image class="focus-list-check" src="../../static/check2.png"/><text class="focus-list-btn-text">已订阅</text>
+          <button class="focus-list-btn" @click="focusBloger(item)">
+            <image class="focus-list-check" src="../../static/check2.png"/><text class="focus-list-btn-text">已关注</text>
           </button>
         </li>
       </ul>
@@ -20,22 +20,566 @@
 
 <script>
 	import mScroll from '../../components/m-scroll/index.nvue'
-  import {getMyFocuslogListApi} from '../../api/mine.js'
-  import {unFollowBlogerApi} from '../../api/homePage.js'
-  import mImage from '../../components/m-image/index.nvue'
-  import {Confirm, Toast} from '../../utils/popup.js'
-	
-  export default {
+	import mImage from '../../components/m-image/index.nvue'
+	import {Toast, Confirm} from '../../utils/popup.js'
+	const defaultList = [
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: true,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			// videoUrl: 'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: true
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: true
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+			],
+			isCollect: false,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		}
+	]
+	export default {
 		components: {
 			mScroll,
-      mImage
+			mImage
 		},
 		data () {
 			return {
-        pages: {
-          page: 1
-        },
-				list: []
+				searchValue: '',
+				isFocused: false,
+				displayIntro: false,
+				avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+				list: [],
+				navTop: 0,
+				barHeight: 0,
+				height: '100%',
+				/** @Tab **/
+				tabs: {
+					1: '关注',
+					2: '推荐'
+				},
+				type: 1,
+				navWdith: '702rpx'
+			}
+		},
+		onShareAppMessage () {
+			return {
+				title: `${this.userInfo.nickname || '你的好友'}邀请你使用GoodIns`
 			}
 		},
 		onPullDownRefresh () {
@@ -46,50 +590,28 @@
 		},
 		created () {
 			this.getData()
+			// #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			plus.navigator.setStatusBarBackground("#FF0000")
+			// #endif
 		},
 		methods: {
 			getData () {
-        getMyFocuslogListApi(this.pages).then(({data}) => {
-          if (this.pages.page === 1) {
-            this.list = []
-          }
-          this.list = [...this.list, ...data.list]
-          this.pages.last_create_time = data.last_create_time
-          this.$refs.mScroll.loadSuccess({
-            total: this.list.length,
-            hasNextPage: data.has_more
-          })
-        })
+				setTimeout(() => {
+					this.list = [...defaultList]
+				}, 1000)
 			},
-      firstPage () {
-        this.pages = { page: 1 }
-        this.getData()
-      },
-      // 博主页面
-			toBloger (item) {
-				uni.navigateTo({url: `/pages/homePage/bloger?id=${item.id}`})
-			},
-			// 刷新列表
-			changeItem (item, index) {
-				const list = [...this.list]
-				list[index] = {...item}
-				this.list = [...list]
-			},
-      focusBloger (e, item) {
-        Confirm(
-          '提示',
-          '确定取消订阅吗？',
-          '确定',
-          () => {
-            unFollowBlogerApi({id: item.id}).then(() => {
-              Toast('success', '已取消订阅！')
-              this.firstPage()
-            })
-          }
-        )
-        // #ifdef APP-NVUE
-        e.stopPropagation()
-        // #endif
+			cancelFocus (item) {
+				Confirm(
+					'提示',
+					'确定取消关注吗？',
+					'确定',
+					() => {
+						item.isCollect = false
+						Toast('success', '已取消关注！')
+						this.changeItem()
+					}
+				)
 			}
 		}
 	}
@@ -108,7 +630,9 @@
 			background-color: #fff;
 			flex-direction: row;
 			align-items: center;
-			@extend .border-b;
+			border-bottom: 1rpx;
+			border-style: solid;
+			border-bottom-color: $border;
 		}
 		&-h1 {
 			font-size: 32rpx;

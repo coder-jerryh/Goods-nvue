@@ -1,35 +1,28 @@
-const version = '1.0.6'
+const BASE_CONFIG = {
+  qqMapKey: 'NB4BZ-FJK6J-37TFA-F7KQZ-YSGT7-2XFMV'
+}
 const CONFIG = {
   // 开发版
   develop: {
     env: 'dev',
-    envType: 2,
-    api: 'http://testapi.gi.njboshi.net:8000',
-    uploadUrl: 'http://testapi.gi.njboshi.net:8000/upPic' // 上传接口
+    // api: 'https://mp.activity.zenyuca.cn',
+    api: 'https://api.sanduanlun.cn:8000',
+    uploadUrl: 'https://api.sanduanlun.cn:8000/upload_file', // 上传接口
+    fileUrl: 'https://api.sanduanlun.cn:8000'
   },
-  // 体验版/测试版
+  // 体验版
   trial: {
     env: 'test',
-    envType: 2,
-    api: 'https://api.gi.njboshi.net',
-    uploadUrl: 'https://api.gi.njboshi.net/upPic' // 上传接口
+    api: 'https://api.sanduanlun.cn:8000',
+    uploadUrl: 'https://api.sanduanlun.cn:8000/upload_file', // 上传接口
+    fileUrl: 'https://api.sanduanlun.cn:8000'
   },
   // 正式版
   release: {
     env: 'prod',
-    envType: 0,
-    api: 'https://api.gi.njboshi.net',
-    uploadUrl: 'https://api.gi.njboshi.net/upPic' // 上传接口
+    api: 'https://mp.activity.upbook2321.com',
+    uploadUrl: 'https://file.activity.upbook2321.com/file/upload', // 上传接口
+    fileUrl: 'https://file.activity.upbook2321.com'
   }
 }
-let ENV = ''
-// 小程序自动判断环境
-// #ifndef APP-PLUS
-ENV = __wxConfig.envVersion
-// #endif
-
-// App手动修改⚠️
-// #ifdef APP-PLUS
-ENV = 'develop'
-// #endif
-export default {...CONFIG[ENV], version}
+export default {...BASE_CONFIG, ...CONFIG['develop']}

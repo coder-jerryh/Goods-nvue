@@ -1,49 +1,50 @@
 <template>
-  <section class="editor-content" :style="{minHeight: height}">
-    <rich-text v-if="requestApi" class="editor-content-article" :nodes='editorContent'></rich-text>
+  <section class="editor-content">
+    <text class="editor-content-article" v-if="requestApi" v-html="editorContent"></text>
     <text class="editor-content-article" v-else selectable>{{editorContent}}</text>
   </section>
 </template>
 
 <script>
-import {getProtocolApi, getPrivacyPolicyApi, getAboutUsApi} from '../../api/mine'
-import {Toast} from '../../utils/popup.js'
-import parseHtml from '../../utils/html-parse.js'
+import {getPrivacyApi, getAgreementApi, getAboutUsApi} from '../../api/mine'
 const API = {
-  用户使用协议: getProtocolApi,
-  隐私协议: getPrivacyPolicyApi,
-  
+  隐私政策: getPrivacyApi,
+  用户协议: getAgreementApi,
   关于我们: getAboutUsApi,
   新手教程: getAboutUsApi
 }
 export default {
   data () {
     return {
-      height: 'auto',
       title: '',
       requestApi: false,
-      editorContent: ''
+      editorContent: '',
+      webviewStyles: {
+        progress: {
+          color: '#FBAF02'
+        }
+      }
     }
   },
   computed: {},
   onLoad (options) {
-    this.height = uni.getSystemInfoSync().safeArea.height + 'px'
     this.requestApi = options.requestApi === 'true'
     this.title = options.title
     // 请求接口
     if (this.requestApi) {
       this.getContent()
     } else {
-      this.editorContent = uni.getStorageSync('editorContent')
+      this.editorContent = uni.getStorageSync('editorContent') || 'GoodIns是中国移动通信集团有限公司出资成立的全资子公司。公司按照中国移动整体战略布局，围绕“物联网业务服务的支撑者、专用模组和芯片的提供者、物联网专用产品的推动者”的战略定位，'
     }
     uni.setNavigationBarTitle({ title: options.title })
   },
   methods: {
     // 请求接口
     getContent () {
-      Toast('loading', '加载中…')
-      API[this.title]().then(data => {
-        this.editorContent = parseHtml(data)
+      this.$Toast('loading', '加载中…')
+      API[this.title]().then(({data}) => {
+        data = data.replace(/max-width:100%;/g, `max-width:100%;border-radius: 4px;margin-top: 5px;'`)
+        this.editorContent = data
       }).finally(() => {
         uni.hideLoading()
       })
@@ -61,7 +62,7 @@ export default {
   background: #fff;
   &-article{
     font-size: 28rpx;
-    line-height: 40rpx;
+    color: #444;
   }
 }
 </style>

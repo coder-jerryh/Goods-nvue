@@ -1,243 +1,87 @@
 <template>
-	<div class="container">
-		<ul class='cell'>
-			<li class='cell-item v-ob cell-item-1' @click="changeAvatar">
-				<m-image v-if='userInfo.avatar' :src="userInfo.avatar"
-					:imageStyle="{width: '125rpx', height: '125rpx', borderRadius: '100rpx'}" border />
-				<image class='cell-item-no-avatar' v-else src="../../static/noAvatar.png" />
-				<text class='cell-item-info'>更换头像</text>
-				<image class='cell-item-arrow' src="../../static/arrow.png" />
-			</li>
-			<li class='cell-item v-ob' @click="openPopup">
-				<text class='cell-item-name'>昵称</text>
-				<text class='cell-item-info'>{{userInfo.nickname}}</text>
-				<image class='cell-item-arrow' src="../../static/arrow.png" />
-			</li>
-			<li class='cell-item v-ob' :class="{'cell-item-no-border': platform == 'wxapp'}"
-				@click="showPhonePopup = true">
-				<text class='cell-item-name'>手机号</text>
-				<text class='cell-item-info'>{{userInfo.mobile_hide}}</text>
-				<image class='cell-item-arrow' src="../../static/arrow.png" />
-			</li>
-			<!-- #ifdef APP-PLUS -->
-			<li class='cell-item v-ob cell-item-no-border' @click='toBind'>
-				<text class='cell-item-name'>微信号</text>
-				<text class='cell-item-info cell-item-info-disabled'>{{userInfo.is_weixin_bind ? '已绑定' : '未绑定'}}</text>
-				<image class='cell-item-arrow' v-if='!userInfo.is_weixin_bind' src="../../static/arrow.png" />
-			</li>
-			<!-- #endif -->
-		</ul>
-		<text class="btn v-ob" @click='loginOut'>退出登录</text>
-		<m-popup title='修改昵称' v-model="showPopup" height="355rpx">
+  <div class="container">
+    <ul class='cell'>
+      <li class='cell-item v-ob cell-item-1' @click="changeAvatar">
+        <image class='cell-item-no-avatar' src="../../static/noAvatar.png" />
+        <text class='cell-item-info'>更换头像</text>
+        <image class='cell-item-arrow' src="../../static/arrow.png" />
+      </li>
+      <li class='cell-item v-ob' @click="openPopup('昵称', 'nickname')">
+        <text class='cell-item-name'>昵称</text>
+        <text class='cell-item-info'>Jerry丶Hu</text>
+        <image class='cell-item-arrow' src="../../static/arrow.png" />
+      </li>
+      <li class='cell-item v-ob' @click="openPopup('昵称', 'nickname')">
+        <text class='cell-item-name'>手机号</text>
+        <text class='cell-item-info'>136****2256</text>
+        <image class='cell-item-arrow' src="../../static/arrow.png" />
+      </li>
+      <li class='cell-item v-ob cell-item-no-border'>
+        <text class='cell-item-name'>微信号</text>
+        <text class='cell-item-info cell-item-info-disabled'>已绑定</text>
+        <image class='cell-item-arrow' src="../../static/arrow.png" />
+      </li>
+    </ul>
+    <text class="btn v-ob" @click='loginOut'>退出登录</text>
+    <m-popup title='修改昵称' v-model="showPopup" height="355rpx">
 			<div slot='content' class="edit">
-				<input class='edit-input' v-model='nickname' placeholder="请输入昵称">
-				<button class='edit-btn' @click='submit(userInfo.avatar, nickname)' :loading='loading'>
-					<text class='edit-btn-text'>提交</text>
-				</button>
+				<input class='edit-input' placeholder="请输入昵称">
+        <button class='edit-btn'>
+          <text class='edit-btn-text'>提交</text>
+        </button>
 			</div>
 		</m-popup>
-		<m-popup title='修改手机号' v-model="showPhonePopup" height="540rpx">
-			<div slot='content' class="edit">
-				<div class="input">
-					<image class="input-icon" src='../../static/phone.png' />
-					<input class="input-phone" v-model='form.phone' maxlength="11" placeholder="请输入新手机号">
-				</div>
-				<div class="input">
-					<image class="input-icon" src='../../static/code.png' />
-					<input class="input-code" v-model='form.msgcode' maxlength="6" placeholder="请输入验证码">
-					<text v-if='second' class="input-code-btn input-code-btn-disabled">{{second}}秒后获取</text>
-					<text v-else class="input-code-btn v-ob" @click='sendCode'>获取验证码</text>
-				</div>
-				<button class='edit-btn v-ob' @click='submitPhone' :loading='loading'>
-					<text class='edit-btn-text'>提交修改</text>
-				</button>
-			</div>
-		</m-popup>
-		<!-- 注销账号 -->
-		<!-- #ifdef APP-PLUS -->
-		<text class="closeAccount v-ob" @click='closeAccount'>注销账号</text>
-		<!-- #endif -->
 	</div>
 </template>
 
 <script>
 	import mPopup from '../../components/m-popup/index.nvue'
-	import {
-		Confirm,
-		Toast
-	} from '../../utils/popup.js'
-	import {
-		mapState,
-		mapActions,
-		mapMutations
-	} from 'vuex'
-	import mImage from '../../components/m-image/index.nvue'
-	import {
-		sendCodeApi,
-		wxLoginApi
-	} from '../../api/login.js'
-	import {
-		editPhoneApi,
-		editUserInfoApi
-	} from '../../api/mine.js'
-	import MD5 from '../../utils/md5.js'
-	import config from '../../config/index.js'
+	import {Confirm, Toast} from '../../utils/popup.js'
 	export default {
-		components: {
-			mPopup,
-			mImage
-		},
-		data() {
+    components: {
+      mPopup
+    },
+		data () {
 			return {
-				nickname: '',
-				loading: false,
-				showPopup: false,
-				showPhonePopup: false,
-				form: {},
-				second: 0
+        showPopup: false
 			}
 		},
-		computed: {
-			...mapState(['userInfo']),
-			platform() {
-				return getApp().globalData.platform
-			}
-		},
-		created() {
+		created () {
 			// #ifdef APP-PLUS
 			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
 			plus.navigator.setStatusBarBackground("#fff")
 			// #endif
 		},
-		onShow() {
-			this.getUserInfo()
-		},
 		methods: {
-			...mapMutations(['setUserInfo']),
-			...mapActions(['getUserInfo']),
-			changeAvatar() {
-				const that = this
-				uni.chooseImage({
-					count: 1,
-					sizeType: ['compressed'],
-					sourceType: ['album'],
-					success: ({
-						tempFilePaths
-					}) => {
-						Toast('loading', '上传中…')
-						uni.uploadFile({
-							url: config.uploadUrl, //仅为示例，非真实的接口地址
-							filePath: tempFilePaths[0],
-							name: 'file',
-							formData: {
-								type: 'avatar'
-							},
-							success: (uploadFileRes) => {
-								that.userInfo.avatar = JSON.parse(uploadFileRes.data).data.url
-								that.submit()
-							}
-						})
-					}
-				})
-			},
-			// 发送验证码
-			sendCode() {
-				if (!this.form.phone) {
-					return Toast('warning', '请输入新手机号')
-				}
-				const device_id = uni.getSystemInfoSync().deviceId
-				const timestamp = Date.parse(new Date()) / 1000
-				const params = {
-					type: 'login',
-					timestamp,
-					device_id,
-					phone: this.form.phone,
-					token: MD5(`&@login&${this.form.phone}&${device_id}&${timestamp}`)
-				}
-				sendCodeApi(params).then(data => {
-					this.second = 60
-					const timer = setInterval(() => {
-						this.second--
-						if (this.second === 0) {
-							clearInterval(timer)
-						}
-					}, 1000)
-				})
-			},
-			submitPhone() {
-				if (!this.form.phone) {
-					return Toast('warning', '请输入新手机号')
-				}
-				if (!this.form.msgcode) {
-					return Toast('warning', '请输入验证码')
-				}
-				this.loading = true
-				editPhoneApi(this.form).then(({
-					data
-				}) => {
-					Toast('success', '修改成功！')
-					this.getUserInfo()
-					this.form = {}
-					this.showPhonePopup = false
-				}).finally(() => {
-					this.loading = false
-				})
-			},
-			toBind() {
-				if (this.userInfo.is_weixin_bind) return
-				uni.switchTab({
-					url: '/pages/score/index'
-				})
-			},
-			openPopup() {
-				this.nickname = this.userInfo.nickname
+			openPopup () {
 				this.showPopup = true
 			},
-			submit(avatar = this.userInfo.avatar, nickname = this.userInfo.nickname) {
-				this.loading = true
-				editUserInfoApi({
-					avatar,
-					nickname
-				}).then(() => {
-					this.showPopup = false
-					this.userInfo.nickname = nickname
-					this.userInfo.avatar = avatar
-					Toast('success', '修改成功！')
-				}).finally(() => {
-					this.loading = false
-				})
-			},
-			// 注销账号
-			closeAccount() {
-				Confirm(
-					'提示',
-					'确认注销账号？注销后无法恢复',
-					'确认',
-					() => {
-						closeAccountApi().then(() => {
-							uni.clearStorageSync()
-							this.setUserInfo(null)
-							uni.switchTab({
-								url: '/pages/homePage/index'
-							})
-						})
-					}
-				)
-			},
-			loginOut() {
-				Confirm(
-					'提示',
-					'确认退出登录吗？',
-					'确认',
-					() => {
-						uni.clearStorageSync()
-						this.setUserInfo(null)
-						uni.switchTab({
-							url: '/pages/homePage/index'
-						})
-					}
-				)
-			}
+      changeAvatar () {
+        uni.chooseImage({
+          success: (chooseImageRes) => {
+            const tempFilePaths = chooseImageRes.tempFilePaths
+            uni.uploadFile({
+              url: 'https://www.example.com/upload', //仅为示例，非真实的接口地址
+              filePath: tempFilePaths[0],
+              name: 'file',
+              formData: {
+                'user': 'test'
+              },
+              success: (uploadFileRes) => {
+                console.log(uploadFileRes.data)
+              }
+            })
+          }
+        })
+      },
+      loginOut () {
+        Confirm(
+          '提示',
+          '确认退出登录吗？',
+          '确认',
+          () => {}
+        )
+      }
 		}
 	}
 </script>
@@ -247,165 +91,91 @@
 		/* #ifndef APP-PLUS */
 		display: block;
 		background: #f5f6f7;
-		min-height: 100vh;
-
+    min-height: 100vh;
 		/* #endif */
 		&-bg {
 			width: 750rpx;
 		}
 	}
-
 	.cell {
 		background: #fff;
-		padding: 0 28rpx;
-
+    padding: 0 28rpx;
 		&-item {
 			flex-direction: row;
 			align-items: center;
 			padding: 32rpx 0;
-			@extend .border-b;
-
-			&-1 {
-				padding: 20rpx 0;
-			}
-
-			&-no-border {
-				border-bottom: 0;
-
-				/* #ifndef APP-PLUS */
-				&:after {
-					display: none;
-				}
-
-				/* #endif */
-			}
-
-			/* #ifndef APP-PLUS */
-			&:last-child:after {
-				display: none;
-			}
-
-			/* #endif */
-			&-no-avatar {
-				width: 98rpx;
-				height: 98rpx;
-				border-radius: 50%;
-			}
-
+			border-bottom: 1rpx;
+			border-style: solid;
+			border-bottom-color: $border;
+      &-1 {
+        padding: 20rpx 0;
+      }
+      &-no-border {
+        border-bottom: 0;
+      }
+      &-no-avatar {
+        width: 98rpx;
+        height: 98rpx;
+        border-radius: 50%;
+      }
 			&-name {
 				font-size: 32rpx;
 				color: #666;
 			}
-
 			&-info {
-				flex: 1;
-				text-align: right;
+        flex: 1;
+        text-align: right;
 				color: #333;
 				font-size: 32rpx;
-				margin-right: 6rpx;
-
-				&-disabled {
-					color: #999;
-				}
+        margin-right: 6rpx;
+        &-disabled {
+          color: #999;
+        }
 			}
-
 			&-arrow {
 				width: 25rpx;
 				height: 25rpx;
 			}
 		}
 	}
-
-	.btn {
-		/* #ifndef APP-PLUS */
+  .btn {
+    /* #ifndef APP-PLUS */
 		display: block;
 		/* #endif */
-		margin-top: 20rpx;
-		font-size: 32rpx;
-		color: $color;
-		width: 750rpx;
-		height: 104rpx;
-		line-height: 104rpx;
-		background: #FFFFFF;
-		text-align: center;
-	}
-
-	.edit {
-		align-items: center;
-		padding: 10rpx 0;
-		/* #ifndef APP-PLUS */
-		padding-bottom: calc(env(safe-area-inset-bottom));
-
-		/* #endif */
-		&-input {
-			width: 666rpx;
-			height: 84rpx;
-			background: #F5F6F7;
-			border-radius: 100rpx;
-			font-size: 30rpx;
-			padding: 0 30rpx;
-		}
-
-		&-btn {
-			margin-top: 100rpx;
-			width: 666rpx;
-			height: 84rpx;
-			background: #FF9B35;
-			border-radius: 100rpx;
-			border: 0;
-
-			&-text {
-				font-size: 32rpx;
-				color: #fff;
-			}
-		}
-	}
-
-	.input {
-		margin-top: 35rpx;
-		width: 666rpx;
-		height: 84rpx;
-		background: #F5F6F7;
-		border-radius: 100rpx;
-		flex-direction: row;
-		align-items: center;
-		padding: 0 32rpx;
-
-		&-icon {
-			width: 33rpx;
-			height: 33rpx;
-			margin-right: 10rpx;
-		}
-
-		&-phone,
-		&-code {
-			flex: 1;
-			font-size: 30rpx;
-		}
-
-		&-code-btn {
-			line-height: 32rpx;
-			width: 176rpx;
-			color: #268CF5;
-			font-size: 30rpx;
-			border-left: 1px;
-			border-style: solid;
-			border-left-color: #999;
-			text-align: right;
-
-			&-disabled {
-				color: #999;
-			}
-		}
-	}
-
-	.closeAccount {
-		position: fixed;
-		bottom: 30rpx;
-		color: #aaa;
-		font-size: 28rpx;
-		text-align: center;
-		left: 0;
-		right: 0;
-	}
+    margin-top: 20rpx;
+    font-size: 32rpx;
+    color: $color;
+    width: 750rpx;
+    height: 104rpx;
+    line-height: 104rpx;
+    background: #FFFFFF;
+    text-align: center;
+  }
+  .edit {
+    align-items: center;
+    padding: 10rpx 0;
+    /* #ifndef APP-PLUS */
+    padding-bottom: calc(env(safe-area-inset-bottom));
+    /* #endif */
+    &-input {
+      width: 666rpx;
+      height: 84rpx;
+      background: #F5F6F7;
+      border-radius: 100rpx;
+      font-size: 30rpx;
+      padding: 0 30rpx;
+    }
+    &-btn {
+      margin-top: 100rpx;
+      width: 666rpx;
+      height: 84rpx;
+      background: #FF9B35;
+      border-radius: 100rpx;
+      border: 0;
+      &-text {
+        font-size: 32rpx;
+        color: #fff;
+      }
+    }
+  }
 </style>

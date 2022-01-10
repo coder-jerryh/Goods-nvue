@@ -1,8 +1,7 @@
 import Vue from 'vue'
 import { QQMapWX } from './wx-jssdk'
 import config from '../config'
-import { getAddress } from '../utils/filters'
-import {Toast} from '../utils/popup'
+import {getAddress} from '../utils/filters'
 // 获取位置
 export const getLocation = () => {
   return new Promise((resolve) => {
@@ -94,37 +93,5 @@ export const selectLocation = (location) => {
         }
       }
     })
-  })
-}
-
-// App分享成小程序
-export const shareAppToMp = (shareInfo, cb) => {
-  uni.downloadFile({
-    url: shareInfo.imageUrl,
-    success: (res) => {
-      if (res.statusCode === 200) {
-        uni.share({
-          provider: 'weixin', // 分享服务提供商
-          // WXSceneSession分享到聊天界面、WXSceneTimeline分享到朋友圈、WXSceneFavorite分享到微信收藏
-          scene: 'WXSceneSession',
-          type: 5, // 图文、纯文字、纯图片、音乐、视频、小程序，5为小程序
-          imageUrl: res.tempFilePath,
-          title: shareInfo.title,
-          miniProgram: {
-            id: 'gh_4fbb01578e1a', // 小程序原始ID
-            path: shareInfo.path,
-            type: config.envType, // 小程序版本类型，0正式版、1测试版、2-体验版，默认为0
-            webUrl: 'https://goodins.njboshi.net/app/' // 兼容低版本的网页链接，可选
-          },
-          success () {
-            Toast('success', '分享成功！')
-            cb()
-          },
-          fail (e) {
-            console.log(e)
-          }
-        })
-      }
-    }
   })
 }

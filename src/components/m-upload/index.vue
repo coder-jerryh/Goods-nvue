@@ -18,7 +18,7 @@
           :src="url"
           @click="preview(i)"
           showLoading/>
-        <i v-if="!disabled" class="iconfont icon-close" @click.stop="delFile($event, i)"></i>
+        <i v-if="!disabled" class="iconfont icon-close" @click.stop="delFile(i)"></i>
         <i class="mainPic" v-if="showMainPic && !i">{{isVideo(url) ? '视频' : '主图'}}</i>
       </li>
       <li class="add" @click="chooseFile(0)" v-if="showUpload && !disabled">
@@ -343,12 +343,9 @@ export default {
       this.$emit('input', this.handelData(files))
       this.$emit('uploadSuccess')
     },
-    delFile (e, delI) {
+    delFile (delI) {
       const files = this.fileList.filter((item, i) => i !== delI)
       this.$emit('input', this.handelData(files))
-      // #ifdef APP-NVUE
-      e.stopPropagation()
-      // #endif
     },
     // 判断是不是要得字符串数据
     handelData (files) {

@@ -1,79 +1,116 @@
 <template>
   <div class="container">
-    <!-- #ifndef APP-PLUS -->
-    <m-scroll ref='mScroll' v-model='pages' @getData='getData'>
-    <!-- #endif -->
-      <!-- 列表 -->
-      <blog-list ref='blogList' v-model='pages' @getData='getData' :list='list' @firstPage='firstPage' hasBar @changeItem='changeItem'/>
-    <!-- #ifndef APP-PLUS -->
-    </m-scroll>
-    <!-- #endif -->
-  </div>
+		<!-- 列表 -->
+		<m-scroll ref='mScroll' @getData='getData'>
+			<blog-list :listType='type' :list='list' @changeItem='changeItem'/>
+		</m-scroll>
+	</div>
 </template>
 
 <script>
-	import mScroll from '../../components/m-scroll/index.nvue'
 	import blogList from '../components/blog-list.nvue'
-  import {getLikeBlogListApi} from '../../api/mine.js'
-  import {mapState} from 'vuex'
-	
-  let childScroll = ''
-  export default {
+	import mScroll from '../../components/m-scroll/index.nvue'
+	const defaultList = [
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: true,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			// videoUrl: 'http://clips.vorwaerts-gmbh.de/big_buck_bunny.mp4',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: true
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: true
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+			],
+			isCollect: false,
+			likeCount: 666,
+			isLiked: false
+		},
+		{
+			avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+			nickname: '中央日报',
+			createTime: '05-15',
+			isFocused: false,
+			content: '进入二季度以来，多地紧抓工程建设黄金期，聚焦电子信息、高端装备、新能源、新材料等重点领域部署落地新一批先进制造业重大项目，并在重大项目的牵引下推动产业聚集，谋划打造先进制造业发展高地。',
+			pics: [
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg',
+				'https://cdn.wallpaperhub.app/cloudcache/7/1/e/6/8/8/71e68801aea8015b75e27a6c3a9297874d00e56e.jpg'
+			],
+			isCollect: true,
+			likeCount: 666,
+			isLiked: false
+		}
+	]
+	export default {
 		components: {
 			blogList,
-      mScroll
+			mScroll
 		},
 		data () {
 			return {
-        pages: {
-          page: 1
-        },
 				list: []
 			}
 		},
-    computed: {
-      ...mapState(['userInfo'])
-    },
-    onShareAppMessage () {
-			return this.shareInfo
-		},
 		onPullDownRefresh () {
-			this.$refs[childScroll].pullRefresh()
+			this.$refs.mScroll.pullRefresh()
 		},
 		onReachBottom () {
-			this.$refs[childScroll].loadMore()
+			this.$refs.mScroll.loadMore()
 		},
 		created () {
-      childScroll = getApp().globalData.platform === 'wxapp' ? 'mScroll' : 'blogList'
 			this.getData()
 		},
 		methods: {
 			getData () {
-        getLikeBlogListApi(this.pages).then(({data}) => {
-          if (this.pages.page === 1) {
-            this.list = []
-          }
-          // 不是会员，要看广告
-          if (!this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
-          // if (this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
-            data.list.push({
-              type: 'ad',
-              adpid: data.adpid,
-              wx_adpid: data.wx_adpid
-            })
-          }
-          this.list = [...this.list, ...data.list]
-          this.pages.last_create_time = data.last_create_time
-          this.$refs[childScroll].loadSuccess({
-            total: this.list.length,
-            hasNextPage: data.has_more
-          })
-        })
+				setTimeout(() => {
+					this.list = [...defaultList]
+					console.log('完成1✅')
+					this.$refs.mScroll.loadSuccess({
+						total: 4,
+						hasNextPage: true
+					})
+				}, 1000)
 			},
-      firstPage () {
-        this.pages = { page: 1 }
-        this.getData()
-      },
 			// 刷新列表
 			changeItem (item, index) {
 				const list = [...this.list]

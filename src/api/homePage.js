@@ -1,57 +1,26 @@
-import { httpRequest } from '../utils/request.js'
-// 首页推荐
-export const getHomePageBlogListApi = (data) => {
-  return httpRequest('post', '/getRecomPost', data)
+import {httpRequest} from '../utils/request.js'
+// 添加-评论的评论
+export const replyCommentApi = (commentServiceID, data) => {
+  return httpRequest('post', `/mp/comment/add2Comment/${commentServiceID}`, data)
 }
-// 首页推荐
-export const testPushApi = () => {
-  return httpRequest('post', '/testpush')
+// 删除
+export const delCommentApi = (commentServiceID) => {
+  return httpRequest('post', `/mp/comment/del/${commentServiceID}`)
 }
-// 订阅
-export const getFollowBlogListApi = (data) => {
-  return httpRequest('post', '/getFollowBlogPost', data)
+// 添加-动态的评论
+export const addCommentApi = (blogServiceID, data) => {
+  return httpRequest('post', `/mp/comment/add2Merchant/${blogServiceID}`, data)
 }
-// 订阅博主
-export const followBlogerApi = (data) => {
-  return httpRequest('post', '/Blog/follow', data)
+// 点赞触发器
+export const likeCommentTriggerApi = (serviceID) => {
+  return httpRequest('post', `/mp/comment/likeTrigger/${serviceID}`, {hideLoading: true})
 }
-// 取消订阅博主
-export const unFollowBlogerApi = (data) => {
-  return httpRequest('post', '/Blog/unFollow', data)
+// 列表-评论的评论
+// 列表-评论的评论
+export const getCommentListApi = (type, commentServiceID, data) => {
+  return httpRequest('post', `/mp/comment/${!type ? 'listHotForMerchant' : 'listNewForMerchant'}/${commentServiceID}`, data)
 }
-// 收藏帖子
-export const collowBlogeApi = (data) => {
-  return httpRequest('post', '/Post/follow', data)
-}
-// 取消收藏帖子
-export const unCollectBlogApi = (data) => {
-  return httpRequest('post', '/Post/unFollow', data)
-}
-// 点赞帖子
-export const likeBlogeApi = (data) => {
-  return httpRequest('post', '/Post/like', data)
-}
-// 取消点赞帖子
-export const unLikeBlogApi = (data) => {
-  return httpRequest('post', '/Post/unLike', data)
-}
-// 查看翻译
-export const readTranslateApi = (data) => {
-  return httpRequest('post', '/translate', data)
-}
-// 查看博客主页
-export const getBlogerInfoApi = (data) => {
-  return httpRequest('post', '/Blog/index', data)
-}
-// 获取博主更多帖子列表
-export const getBlogerBlogApi = (data) => {
-  return httpRequest('post', '/Blog/getMorePost', data)
-}
-// 获取博主更多帖子列表
-export const downloadFileApi = (data) => {
-  return httpRequest('post', '/download', data)
-}
-// 拉黑博主
-export const shieldBlogerApi = (data) => {
-  return httpRequest('post', '/Blog/shield', data)
+// 验证是否可以评论
+export const verifyCommentApi = (merchantServiceID) => {
+  return httpRequest('post', `/mp/comment/verifyCommentCondition/${merchantServiceID}`)
 }

@@ -2,6 +2,7 @@
   <div class="m-popup" v-if="showPopup">
 		<div class="m-popup-mask" :style="{opacity}" @click="$emit('input', false)"></div>
 		<div
+			id='m-popup-container'
 			class="m-popup-container"
 			:style="{transform: `translateY(${translateY})`}"
 			:class="{'m-popup-container-radius': radius}">
@@ -41,13 +42,10 @@ export default {
 			if (this.value) {
 				this.showPopup = true
 				this.translateY = this.height
-        this.$nextTick(() => {
-          const timer = setTimeout(() => {
-            this.opacity = 1
-            this.translateY = 0
-            clearTimeout(timer)
-          }, 20)
-        })
+				this.$nextTick(() => {
+					this.opacity = 1
+					this.translateY = 0
+				})
 			} else {
 				this.opacity = 0
 				this.translateY = this.height
@@ -73,13 +71,13 @@ export default {
 		&-mask {
 			@extend .fixed;
 			background-color: rgba(0, 0, 0, 0.5);
-			z-index: 999;
+			z-index: 10;
 			transition-property: opacity;
 			transition-duration: 0.25s;
 			transition-timing-function: ease;
 		}
 		&-container {
-			z-index: 9999;
+			z-index: 20;
 			position: fixed;
 			left: 0;
 			right: 0;

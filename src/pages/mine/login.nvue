@@ -1,8 +1,8 @@
 <template>
-  <div class="container" :style='{height}'>
+  <div class="container" :style='{minHeight: height}'>
     <div class="name">
       <image class="name-logo" src='../../static/logo.png'/>
-      <text class="name-h1">Goodins</text>
+      <text class="name-h1">GoodIns</text>
     </div>
     <!-- #ifdef APP-PLUS -->
     <div class="input">
@@ -12,210 +12,129 @@
     <text class="prompt">未注册的手机号验证通过后将自动注册</text>
     <div class="input">
       <image class="input-icon" src='../../static/code.png'/>
-      <input class="input-code" v-model='form.msgcode' maxlength="6" placeholder="请输入验证码">
-      <text v-if='second' class="input-code-btn input-code-btn-disabled">{{second}}秒后获取</text>
+      <input class="input-code" v-model='form.code' maxlength="6" placeholder="请输入手机号">
+      <text v-if='second' class="input-code-btn input-code-btn-disabled">{{second}}s后获取</text>
       <text v-else class="input-code-btn v-ob" @click='sendCode'>获取验证码</text>
     </div>
+    <!-- #endif -->
     <div class="agreement" @click='selected = !selected'>
       <image class="agreement-icon" v-if='selected' src='../../static/selected.png'/>
       <image class="agreement-icon" v-else src='../../static/select.png'/>
       <text class="agreement-text">已阅读</text>
-      <text @click.stop="toAgreement($event, '用户使用协议')" class="agreement-text agreement-text-blue v-ob">《用户使用手册》</text>
+      <text @click.stop="toAgreement('用户使用手册')" class="agreement-text agreement-text-blue v-ob">《用户使用手册》</text>
       <text class="agreement-text">和</text>
-      <text @click.stop="toAgreement($event, '隐私协议')" class="agreement-text agreement-text-blue v-ob">《隐私协议》</text>
+      <text @click.stop="toAgreement('隐私协议')" class="agreement-text agreement-text-blue v-ob">《隐私协议》</text>
     </div>
-    <!-- #endif -->
     <!-- 手机登录 -->
     <!-- #ifdef APP-PLUS -->
-    <button class="submit" @click='phoneLogin' :loading='loading'>
+    <button class="submit" @click='phoneLogin'>
       <text class="submit-text">登录</text>
     </button>
     <!-- #endif -->
 
     <!-- 微信登录 -->
     <!-- #ifndef APP-PLUS -->
-    <button class="submit" v-if='step == 1' @click='wxLogin' :loading='loading'>
+    <button class="submit" @click='wxLogin'>
       <image class="submit-icon" src='../../static/wxLogin.png'/>
       <text class="submit-text">微信登录</text>
     </button>
-    <template v-if='step == 2'>
-      <text class="tips">为了你的账号安全，需要授权手机号</text>
-      <button class="submit" open-type='getPhoneNumber' @getphonenumber='getPhoneNumber' :loading='loading'>
-        <image class="submit-icon submit-icon-mobile" src='../../static/mobile.png'/>
-        <text class="submit-text">获取手机号</text>
-      </button>
-    </template>
     <!-- #endif -->
 	</div>
 </template>
 
 <script>
-  import MD5 from '../../utils/md5'
 	import {Toast} from '../../utils/popup.js'
-  import {phoneLoginApi, sendCodeApi, codeSessionApi, wxLoginApi, bindPhoneApi, editGeTuiApi} from '../../api/login.js'
-  import { mapMutations, mapActions } from 'vuex'
 	export default {
 		data () {
 			return {
-        step: 1,
         height: '100%',
         selected: false,
         form: {},
         second: 0,
-        wxCode: '',
-        loading: false,
-        loginInfo: {}
+        wxCode: ''
 			}
 		},
 		created () {
-      // 高度
       const safeArea = uni.getSystemInfoSync().safeArea
       this.height = safeArea.height + 'px'
-			// #ifndef APP-PLUS
-      this.height = '100vh'
-      this.getCode()
-			// #endif
-
-      // 平台
-      this.form.platform = getApp().globalData.platform
-      
 			// #ifdef APP-PLUS
 			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
 			plus.navigator.setStatusBarBackground("#fff")
 			// #endif
 		},
 		methods: {
-      ...mapActions(['getUserInfo']),
-      ...mapMutations(['setUserInfo']),
-      // 手机号登录
 			phoneLogin () {
 				if (!this.form.phone) {
           return Toast('warning', '请输入手机号')
         }
-        if (!this.form.msgcode) {
+        if (!this.form.code) {
           return Toast('warning', '请输入验证码')
         }
-        if (!this.selected) {
-          return Toast('warning', '请阅读《用户使用手册》和《隐私协议》')
-        }
-        this.loading = true
-        phoneLoginApi(this.form).then(({data}) => {
-          this.loginSuccess(data)
-          // 个推
-			    // #ifdef APP-PLUS
-          const platform = getApp().globalData.platform
-          const {clientid} = plus.push.getClientInfo()
-          clientid && editGeTuiApi({ platform, client_id: clientid })
-			    // #endif
-        }).finally(() => {
-          this.loading = false
-        })
 			},
-      // 发送验证码
-      sendCode () {
-        if (!this.form.phone) {
-          return Toast('warning', '请输入手机号')
-        }
-        const device_id = uni.getSystemInfoSync().deviceId
-        const timestamp = Date.parse(new Date()) / 1000
-        const params = {
-          type: 'login',
-          timestamp,
-          device_id,
-          phone: this.form.phone,
-          token: MD5(`&@login&${this.form.phone}&${device_id}&${timestamp}`)
-        }
-        sendCodeApi(params).then(data => {
-          this.second = 60
-          const timer = setInterval(() => {
-            this.second--
-            if (this.second === 0) {
-              clearInterval(timer)
-            }
-          }, 1000)
-        })
-      },
-      // code解析
-      getCode () {
+      wxLogin () {
         const that = this
         uni.login({
           success ({ code }) {
-            if (code) {
-              const params = {
-                code,
-                spread_uid: uni.getStorageSync('shareUid')
-              }
-              codeSessionApi(params).then(({data}) => {
-                that.loginInfo = data
-                uni.removeStorageSync('shareUid')
-              })
-            }
+            if (code) that.wxCode = code
+          },
+          fail () {
+            uni.showToast({
+              title: '授权失败',
+              icon: 'none',
+              duration: 3000
+            })
           }
         })
-      },
-      // 微信登录
-      wxLogin () {
-        const that = this
         wx.getUserProfile({
           desc: '微信登录',
           success: (res) => {
             if (res.errMsg === 'getUserProfile:ok') {
-              Toast('loading', '登录中…')
-              const {nickName, avatarUrl, country, province, gender, city} = res.userInfo
+              this.$Toast('loading', '登录中…')
+              const {nickName, avatarUrl, country, gender} = res.userInfo
               const form = {
-                unionid: that.loginInfo.unionid,
-                nickname: nickName,
-                avatar: avatarUrl,
-                gender,
-                country,
-                province,
-                city
+                code: that.wxCode,
+                encryptedData: res.encryptedData,
+                iv: res.iv,
+                nickName,
+                cover: avatarUrl,
+                address: country,
+                sex: gender
               }
-              wxLoginApi(form).then(({data}) => {
-                uni.hideLoading()
-                if (that.loginInfo.need_phone) {
-                  that.step = 2
-                } else {
-                  that.loginSuccess(that.loginInfo)
+              loginApi(form).then(({data}) => {
+                that.baseInfo = {
+                  ...data,
+                  token: data.Token,
+                  avatar: avatarUrl,
+                  nickname: nickName,
+                  phone: data.UserInfo.phone
                 }
+                that.loginSuccess()
               })
             }
           }
         })
 			},
-      // 获取手机号
-      getPhoneNumber (e) {
-        if (e.detail.errMsg === 'getPhoneNumber:ok') {
-          Toast('loading', '绑定中…')
-          const form = {
-            unionid: this.loginInfo.unionid,
-            encryptedData: e.detail.encryptedData,
-            iv: e.detail.iv
-          }
-          bindPhoneApi(form).then(({data}) => {
-            this.loginSuccess(data)
-          }).finally(() => {
-            uni.hideLoading()
-          })
-        }
-      },
-      // 登录成功
-      loginSuccess (userInfo) {
-        uni.setStorageSync('userInfo', userInfo)
-        uni.setStorageSync('token', userInfo.token)
+      // 获取登录
+      loginSuccess () {
+        uni.setStorageSync('token', this.baseInfo.Token)
         uni.setStorageSync('fromLogin', true)
-        this.setUserInfo(userInfo)
+        this.setUserInfo(this.baseInfo)
         this.getUserInfo()
-        uni.navigateBack()
+        this.$toBack()
       },
-      // 去看协议
-      toAgreement (e, title) {
+      sendCode () {
+        this.second = 60
+        const timer = setInterval(() => {
+          this.second--
+          if (this.second === 0) {
+            clearInterval(timer)
+          }
+        }, 1000)
+      },
+      toAgreement (title) {
         uni.navigateTo({
-           url: `/pages/common/editorPage?title=${title}&requestApi=true`
-        })
-        // #ifdef APP-NVUE
-        e.stopPropagation()
-        // #endif
+           url: `/pages/common/editorPage?title=${title}`
+        });
       }
 		}
 	}
@@ -225,13 +144,13 @@
 	.container {
     align-items: center;
 		background: #fff;
+		/* #ifndef APP-PLUS */
+    min-height: 100vh;
+		/* #endif */
 	}
   .name {
     align-items: center;
     padding: 120rpx 0;
-    /* #ifndef APP-PLUS */
-    padding: 240rpx 0 120rpx;
-		/* #endif */
     &-logo {
       width: 180rpx;
       height: 180rpx;
@@ -264,7 +183,7 @@
     }
     &-code-btn {
       line-height: 32rpx;
-      width: 176rpx;
+      width: 168rpx;
       color: #268CF5;
       font-size: 30rpx;
       border-left: 1px;
@@ -293,10 +212,10 @@
     flex-direction: row;
     align-items: center;
     &-icon {
-      width: 29rpx;
-      height: 29rpx;
-      margin-right: 8rpx;
-      border-radius: 100rpx;
+      width: 26rpx;
+      height: 26rpx;
+      margin-right: 6rpx;
+      border-radius: 50%;
       background: #cccccc;
     }
     &-text {
@@ -306,11 +225,6 @@
         color: #268CF5;
       }
     }
-  }
-  .tips {
-    font-size: 28rpx;
-    color: #666;
-    margin-top: -40rpx;
   }
   .submit {
     margin-top: 100rpx;
@@ -326,10 +240,6 @@
       width: 44rpx;
       height: 38rpx;
       margin-right: 10rpx;
-      &-mobile {
-        width: 48rpx;
-        height: 48rpx;
-      }
     }
     &-text {
       font-size: 32rpx;

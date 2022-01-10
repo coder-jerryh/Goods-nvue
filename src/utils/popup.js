@@ -3,7 +3,7 @@ import Vue from 'vue'
 // 如果是小程序中（待编写）
 // Toast
 // icon、title为必传
-export const Toast = (icon, title, onShow = null, duration = 2000, mask) => {
+export const Toast = (icon, title, onShow = null, duration = 1800, mask) => {
   // loading框
   if (icon === 'loading') {
     uni.showLoading({ title })

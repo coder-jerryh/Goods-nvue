@@ -6,11 +6,110 @@ export const REPORT_OPTION = {
   5: '泄露他人隐私',
   6: '内容令人感到不适'
 }
-export const InformationProtection = `
-<p class='text'>亲爱的用户，我们深知个人信息对您的重要性，我们将按照法律法规的规定，保护您的个人信息及隐私安全。您可以查看完整版《隐私政策》和《用户协议》以便了解我们收集、使用、共享、存储信息的情况，以及对信息的保护措施。</p>
-<p class='text'>1、本隐私政策适用于您通过Goodins应用程序、Goodins公众号和Goodins小程序来使用我们的产品和服务。</p>
-<p class='text'>2、我们可能会申请相册（读取存储）权限，以实现设置、更换头像和图片保存功能。</p>
-<p class='text'>3、我们可能会申请读取设备信息权限，以实现推送服务和保障软件服务的安全防护。</p>
-<p class='text'>4、为实现信息分享等功能所必需，我们可能会调用剪切板并使用与功能相关的最小必要信息，不会回传您的隐私信息。</p>
-<p class='text'>5、如果您同意请点击下面的按钮以接受我们的服务。</p>
-`
+export const DEFAULT_COUPON = {
+  // 无门槛券
+  1: [
+    {
+      label: '无门槛减1元',
+      value: 1
+    },
+    {
+      label: '无门槛减3元',
+      value: 3
+    },
+    {
+      label: '无门槛减5元',
+      value: 5
+    },
+    {
+      label: '无门槛减10元',
+      value: 10
+    },
+    {
+      label: '无门槛减20元',
+      value: 20
+    },
+    {
+      label: '无门槛减30元',
+      value: 30
+    },
+    {
+      label: '无门槛减50元',
+      value: 50
+    },
+    {
+      label: '无门槛减100元',
+      value: 100
+    }
+  ],
+  // 满减券
+  2: [
+    {
+      label: '满30减5元',
+      value: 1
+    },
+    {
+      label: '满50减5元',
+      value: 3
+    },
+    {
+      label: '满100减10元',
+      value: 5
+    },
+    {
+      label: '满100减20元',
+      value: 10
+    },
+    {
+      label: '满200减30元',
+      value: 20
+    },
+    {
+      label: '满200减50元',
+      value: 30
+    }
+  ],
+  // 折扣券
+  3: [
+    {
+      label: '全店9折',
+      value: 1
+    },
+    {
+      label: '全店8.5折',
+      value: 3
+    },
+    {
+      label: '全店8折',
+      value: 3
+    },
+    {
+      label: '全店7折',
+      value: 5
+    },
+    {
+      label: '全店6折',
+      value: 10
+    },
+    {
+      label: '全店5折',
+      value: 20
+    },
+    {
+      label: '全店4折',
+      value: 30
+    },
+    {
+      label: '全店3折',
+      value: 30
+    },
+    {
+      label: '全店2折',
+      value: 30
+    },
+    {
+      label: '全店1折',
+      value: 30
+    }
+  ]
+}

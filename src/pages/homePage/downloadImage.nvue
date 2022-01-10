@@ -18,7 +18,7 @@
 			<button class='toolbar-btn' @click="selectAll">
 				<text class="toolbar-btn-text">全选</text>
 			</button>
-			<button class='toolbar-btn toolbar-btn-orange' @click="downTips">
+			<button class='toolbar-btn toolbar-btn-orange' @click="downloadImage(0)">
 				<text class="toolbar-btn-text toolbar-btn-text-orange">批量下载{{selectedList.length ? `(${selectedList.length}/${imageList.length})` : ''}}</text>
 			</button>
 		</footer>
@@ -27,32 +27,28 @@
 
 <script>
 	import mImage from '../../components/m-image/index.nvue'
-	import {Toast, Confirm} from '../../utils/popup.js'
-  import {downloadFileApi} from '../../api/homePage.js'
-  import {mapState} from 'vuex'
+	import {Toast} from '../../utils/popup.js'
 	export default {
 		components: {
 			mImage
 		},
 		data() {
 			return {
-				imageList: [],
-        reduceScore: 0,
-        blogId: ''
+				imageList: []
 			}
 		},
 		computed: {
-      ...mapState(['userInfo']),
 			selectedList () {
 				return this.imageList.filter(item => item.selected)
 			}
 		},
-		onLoad (options) {
-      this.blogId = options.blogId
+		created () {
 			// #ifdef APP-PLUS
 			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			plus.navigator.setStatusBarBackground("#FF0000")
 			// #endif
 			
+			console.log(uni.getStorageSync('imageList'))
 			this.imageList = uni.getStorageSync('imageList').map(url => {
 				return {url, selected: false}
 			})
@@ -64,28 +60,10 @@
 			selectAll () {
 				this.imageList.forEach(item => item.selected = true)
 			},
-      downTips () {
-        if (!this.selectedList.length) {
+			downloadImage (current) {
+				if (!this.selectedList.length) {
 					return Toast('warning', '请选择图片')
 				}
-        // 不是会员且在当前页面没有下载过图片
-        if (!this.userInfo.is_vip && !this.reduceScore) {
-          Confirm(
-            '提示',
-            '下载图片扣除积分',
-            '确定下载',
-            () => {
-              downloadFileApi({id: this.blogId}).then(({data}) => {
-                this.downloadImage(0)
-                this.reduceScore = data.dec_integral
-              })
-            }
-          )
-        } else {
-          this.downloadImage(0)
-        }
-      },
-			downloadImage (current) {
 				const that = this
 				const total = this.selectedList.length
 				Toast('loading', `下载中${current + 1}/${total}`)
@@ -97,16 +75,12 @@
 								filePath: res.tempFilePath,
 								success () {
 									if (current === total - 1) {
-                    if (!that.userInfo.is_vip) {
-                      Toast('none', `图片保存成功，积分-${that.reduceScore}`)
-                    } else {
-                      Toast('none', '图片保存成功！')
-                    }
+										Toast('success', '图片保存成功！')
 									} else {
 										that.downloadImage(current + 1)
 									}
 								},
-								fail (e) {
+								fail () {
 									Toast('none', '保存失败，请稍后再试~')
 								}
 							})
@@ -134,7 +108,7 @@
 			overflow: hidden;
 			position: relative;
 			&-2, &-5, &-8, &-11, &-14, &-17, &-20 {
-				margin: 8rpx;
+				margin: 8rpx 9rpx;
 			}
 			&-border {
 				border-width: 2px;

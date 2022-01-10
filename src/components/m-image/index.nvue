@@ -1,6 +1,5 @@
 <template>
   <div class="m-image"
-    :class="{'m-image-border': border}"
     :style="{'--bgColor': bgColor, borderRadius: imageStyle.borderRadius || 0}"
     @click="$emit('click')">
    <image
@@ -9,8 +8,7 @@
 		:class="{'m-image-item-showPic': showPic}"
 		:style="{
 			width: imageStyle.width,
-			height: imageStyle.height || 'auto',
-      borderRadius: imageStyle.borderRadius || 0
+			height: imageStyle.height || 'auto'
 		}"
 		:mode="mode"
 		:src="src"
@@ -32,8 +30,7 @@
 				mode="aspectFill"
 				:style="{
 					width: imageStyle.width,
-					height: imageStyle.height || 'auto',
-          borderRadius: imageStyle.borderRadius || 0
+					height: imageStyle.height || 'auto'
 				}"
 				:class="{'placeholder-pic-show': !showPic}"
 			/>
@@ -72,7 +69,6 @@ export default {
 				return {width: '100%', height: '100%'}
 			}
 		},
-    border: Boolean,
 		showLoading: Boolean
   },
   data () {
@@ -98,11 +94,9 @@ export default {
     background: #ececec;
     font-size: 0;
     position: relative;
+    overflow: hidden;
 		align-items: center;
 		justify-content: center;
-    &-border {
-      border: 1px solid $border;
-    }
     &-item{
       position: relative;
       opacity: 0;

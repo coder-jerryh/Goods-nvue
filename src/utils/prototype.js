@@ -28,7 +28,7 @@ that.$toUrl = (url, type) => {
   const isLogin = uni.getStorageSync('userInfo')?.token
   if (type === 'verifyLogin' && !isLogin) {
     return uni.navigateTo({
-      url: '/pages/mine/login'
+      url: '/pages/login/index'
     })
   }
   uni.navigateTo({

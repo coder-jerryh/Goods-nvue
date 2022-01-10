@@ -2,25 +2,16 @@ import Vue from 'vue'
 import Config from '../config/index'
 import store from '../store/index'
 import { computedDate } from './filters'
-import { createSign } from './createSign'
 const that = Vue.prototype
 const preventHandle = (data) => {
   const now = new Date().getTime()
-  const { reason, time } = JSON.parse(data.msg)
+  const { reason, time } = JSON.parse(data.message)
   that.$Alert(
     '禁用提示',
     `你因违反平台规则，暂无法操作\n原因：${reason}\n距离解除还有：${computedDate(time - now)}`,
     '我知道了'
   )
 }
-
-// 平台判断
-let platform = uni.getSystemInfoSync().platform
-// 小程序
-// #ifndef APP-PLUS
-platform = 'wxapp'
-// #endif
-
 // 订阅者
 let subscribers = []
 // 添加缓存接口
@@ -47,6 +38,7 @@ let loadingTimer = null
 // 是否打开了loading
 let isShowLoading = false
 export const httpRequest = (method, url, params = {}, callback) => {
+  params.token = params.token || uni.getStorageSync('token')
   isShowLoading = false
   if (!params.hideLoading && !loadingTimer) {
     loadingTimer = setTimeout(() => {
@@ -58,29 +50,19 @@ export const httpRequest = (method, url, params = {}, callback) => {
     if (!url.includes('http')) {
       url = Config.api + url
     }
-    const userInfo = uni.getStorageSync('userInfo') || {}
     uni.request({
       url,
       data: params,
       method,
       timeout: 10000,
       header: {
-        platform,
-        'content-type': 'application/x-www-form-urlencoded',
-        SIGN: createSign(params, userInfo.uid, uni.getStorageSync('token')),
-        TIMESTAMP: Date.parse(new Date()) / 1000,
-        UID: userInfo.uid || '',
-        version: uni.getStorageSync('version') || Config.version
+        // token: data.token || uni.getStorageSync('token')
       },
       success ({ data }) {
-        // 不拦截
-        if (params.noIntercept) {
-          return resolve(data)
-        }
         clearTimeout(loadingTimer)
         if (callback) return callback(data)
-        switch (data.status) {
-          case 200:
+        switch (data.code) {
+          case 0:
             isShowLoading && uni.hideLoading()
             resolve(data)
             return
@@ -95,7 +77,7 @@ export const httpRequest = (method, url, params = {}, callback) => {
                 '登录已过期，请重新登录~',
                 '去登录',
                 () => {
-                  that.$toUrl('/pages/mine/login')
+                  that.$toUrl('/pages/login/index')
                 }
               )
               return
@@ -122,13 +104,12 @@ export const httpRequest = (method, url, params = {}, callback) => {
             store.commit('changeAlert', true)
             that.$Alert(
               '提示',
-              data.msg || '系统繁忙',
+              data.message || '系统繁忙',
               '我知道了',
               () => {
                 store.commit('changeAlert', false)
               }
             )
-            uni.hideLoading()
             reject(data.code)
         }
       },
