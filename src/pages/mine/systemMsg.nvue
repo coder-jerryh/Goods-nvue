@@ -1,0 +1,143 @@
+<template>
+  <div class='system-msg'>
+    <m-scroll ref='mScroll' v-model="pages" @getData='getData' nativePullLoading>
+      <ul class="msg-list">
+        <li class="msg-item" :class="'msg-item-' + (i + 1)" v-for="(item, i) in list" :key="i" @click='readDetail(item)'>
+          <div class="msg-item-name">
+            <text class="msg-item-name-h1">{{item.title}}</text>
+            <text class="msg-item-name-span">{{item.create_time}}</text>
+            <i class="msg-item-name-point" v-if="!item.is_read"></i>
+          </div>
+          <text class="msg-item-content">{{item.content}}</text>
+          <div class="msg-item-click v-ob" v-if="item.type == 'page'">
+            <text class="msg-item-click-text">查看详情</text>
+            <image class="msg-item-click-arrow" src='../../static/arrow.png'/>
+          </div>
+        </li>
+      </ul>
+    </m-scroll>
+  </div>
+</template>
+
+<script>
+import {getMsgListApi} from '../../api/mine.js'
+import mScroll from '../../components/m-scroll/index.nvue'
+
+export default {
+  components: {
+    mScroll
+  },
+  data () {
+    return {
+      list: [],
+      pages: {
+        page: 1,
+        pageSize: 10
+      }
+    }
+  },
+  onPullDownRefresh () {
+    this.$refs.mScroll.pullRefresh()
+  },
+  onReachBottom () {
+    this.$refs.mScroll.loadMore()
+  },
+  onLoad () {
+    this.getData()
+  },
+  methods: {
+    getData () {
+      if (this.pages.page === 1) {
+        this.list = []
+      }
+      getMsgListApi(this.pages).then(({data}) => {
+        this.list = [...this.list, ...data.list]
+        this.pages.last_create_time = data.last_create_time
+        this.$refs.mScroll.loadSuccess({
+          total: this.list.length,
+          hasNextPage: data.has_more
+        })
+      })
+    },
+    readDetail (item) {
+      if (item.type == 'page') {
+        let query = []
+        for (const key in item.extra) {
+          query.push(`${key}=${item.extra[key]}`)
+        }
+        uni.navigateTo({
+          url: `/${item.path}?${query.join('&')}`
+        })
+      }
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+  .system-msg{
+    background: #f5f6f7;
+    /* #ifndef APP-PLUS */
+    min-height: 100vh;
+    /* #endif */
+  }
+  .msg-list {
+    padding: 0 25rpx;
+  }
+  .msg-item {
+    background: #fff;
+    padding: 20rpx 25rpx;
+    margin: 0 0 25rpx;
+    border-radius: 20rpx;
+    &-1 {
+      margin-top: 25rpx;
+    }
+    &-name {
+      flex-direction: row;
+      align-items: center;
+      &-h1 {
+        color: #333;
+        font-size: 32rpx;
+        font-weight: bold;
+        flex: 1;
+      }
+      
+      &-span {
+        color: #999;
+        font-size: 28rpx;
+      }
+      &-point {
+        width: 12rpx;
+        height: 12rpx;
+        margin-left: 6rpx;
+        border-radius: 50%;
+        background: #f05b53;
+      }
+    }
+    &-content {
+      /* #ifndef APP-PLUS */
+      display: block;
+      /* #endif */
+      margin-top: 15rpx;
+      color: #666;
+      font-size: 28rpx;
+      line-height: 42rpx;
+    }
+    &-click {
+      padding-top: 20rpx;
+      margin-top: 20rpx;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid $border;
+      &-text {
+        color: #888;
+        font-size: 28rpx;
+      }
+      &-arrow {
+        width: 24rpx;
+        height: 24rpx;
+      }
+    }
+  }
+</style>

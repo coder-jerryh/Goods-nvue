@@ -1,0 +1,137 @@
+<template>
+  <div class="m-image"
+    :class="{'m-image-border': border}"
+    :style="{'--bgColor': bgColor, borderRadius: imageStyle.borderRadius || 0}"
+    @click="$emit('click')">
+   <image
+		:show-menu-by-longpress='showMenu'
+		class="m-image-item"
+		:class="{'m-image-item-showPic': showPic}"
+		:style="{
+			width: imageStyle.width,
+			height: imageStyle.height || 'auto',
+      borderRadius: imageStyle.borderRadius || 0
+		}"
+		:mode="mode"
+		:src="src"
+		lazy-load
+		@load='load'/>
+		<template v-if="showLoading">
+			<!-- Loading图 -->
+			<image
+				v-if="showLoading && !loadSuccess"
+				class="placeholder-loading"
+				src="../../static/loading.gif"
+				:class="{'placeholder-loading-show': !showPic}"
+			/>
+			<!-- 占位图 -->
+			<image
+				v-else-if="!loadSuccess"
+				class="placeholder-pic"
+				src="../../static/defaultPic.png"
+				mode="aspectFill"
+				:style="{
+					width: imageStyle.width,
+					height: imageStyle.height || 'auto',
+          borderRadius: imageStyle.borderRadius || 0
+				}"
+				:class="{'placeholder-pic-show': !showPic}"
+			/>
+		</template>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    // 图片地址
+    src: {
+      type: String,
+      default () {
+        return ''
+      }
+    },
+    // 图片加载前背景色
+    bgColor: {
+      type: String,
+      default: '#ececec'
+    },
+    // 图片展示方式，同小程序image
+    mode: {
+      type: String,
+      default: 'aspectFill'
+    },
+    // 长按图片识别小程序码
+    showMenu: {
+      type: Boolean,
+      default: false
+    },
+		imageStyle: {
+			type: Object,
+			default () {
+				return {width: '100%', height: '100%'}
+			}
+		},
+    border: Boolean,
+		showLoading: Boolean
+  },
+  data () {
+    return {
+      showPic: false,
+			loadSuccess: false
+    }
+  },
+	methods: {
+		load () {
+			this.showPic = true
+			const timer = setTimeout(() => {
+				this.loadSuccess = true
+				clearTimeout(timer)
+			}, 200)
+		}
+	}
+}
+</script>
+
+<style lang='scss' scoped>
+  .m-image{
+    background: #ececec;
+    font-size: 0;
+    position: relative;
+		align-items: center;
+		justify-content: center;
+    &-border {
+      border: 1px solid $border;
+    }
+    &-item{
+      position: relative;
+      opacity: 0;
+			transition-property: opacity;
+			transition-duration: 0.2s;
+			transition-timing-function: ease-in-out;
+      &-showPic {
+        opacity: 1;
+      }
+    }
+  }
+	.placeholder-loading {
+		position: absolute;
+		width: 60rpx;
+		height: 60rpx;
+		opacity: 1;
+		z-index: 99;
+		&-show {
+			opacity: 1;
+		}
+	}
+	.placeholder-pic {
+		position: absolute;
+		transition-property: opacity;
+		transition-duration: 0.2s;
+		transition-timing-function: ease-in-out;
+		opacity: 0;
+		&-show {
+			opacity: 1;
+		}
+	}
+</style>

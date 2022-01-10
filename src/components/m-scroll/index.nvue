@@ -1,0 +1,195 @@
+<template>
+  <div class="m-scroll">
+    <!-- 下拉刷新 -->
+    <div class="m-scroll-loading m-scroll-pullLoading" :class="{loadingTime}" v-if="!nativePullLoading">
+			<image class='m-scroll-icon' src="../../static/loading.gif"/>
+			<text class='m-scroll-text'>加载中…</text>
+    </div>
+    <!-- 内容插槽 -->
+    <slot/>
+    <!-- 上拉加载 -->
+    <div v-if="showLoading" class="m-scroll-loading">
+			<image class='m-scroll-icon' src="../../static/loading.gif"/>
+			<text class='m-scroll-text'>加载中…</text>
+    </div>
+    <!-- 空布局 -->
+    <div class="m-scroll-empty" v-if='isEmpty' :style="{height: emptyHeight}">
+      <!-- 自己更换图片哟 -->
+      <image class="m-scroll-empty-icon" src="../../static/empty.png">
+      <button v-if="showLogin" class="m-scroll-empty-btn" @click="$toUrl('/pages/mine/login')">去登录</button>
+      <text v-else class='m-scroll-empty-p'>暂无数据~</text>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    value: {
+      type: Object,
+      required: true,
+      default () {
+        return {
+          // 当前页码
+          page: 1,
+          // 每页条数
+          pageSize: 10,
+          // 是否有下一页
+          hasNextPage: false,
+          // 数据总数
+          total: 0
+        }
+      }
+    },
+    emptyHeight: {
+      type: String,
+      default: 'auto'
+    },
+    // 原生下拉刷新动画
+    nativePullLoading: Boolean
+  },
+  data () {
+    return {
+      // 加载动画
+      showLoading: true,
+      // 无数据
+      isEmpty: false,
+      // 加载中
+      isLoading: false,
+      // 需要长时间动画
+      loadingTime: false,
+      // 去登录
+      showLogin: false
+    }
+  },
+  computed: {
+    // 转换一下pages
+    pages () {
+      return this.value
+    }
+  },
+  methods: {
+    // 手滑动下拉刷新
+    pullRefresh (loadingTime = false) {
+      // 加载中
+      this.isLoading = true
+      // 关闭动画
+      this.showLoading = false
+      // 隐藏空数据
+      this.isEmpty = false
+      // 加载时间
+      this.loadingTime = loadingTime ? 800 : 0
+      const pages = {...this.pages, page: 1}
+      delete pages.last_create_time
+      this.$emit('input', pages)
+      this.$emit('getData')
+    },
+    // 上拉加载
+    loadMore () {
+      // 无下一页或加载中不加载
+      if (!this.showLoading || this.isLoading) return
+      // 加载中
+      this.isLoading = true
+      this.$emit('input', {...this.pages, page: this.pages.page + 1})
+      this.$emit('getData')
+    },
+    // 加载成功
+    loadSuccess (data) {
+      this.showLogin = false
+      // 结束下拉刷新
+      uni.stopPullDownRefresh()
+      // 是否有下一页（可根据总页数和当前页数判断）
+      this.showLoading = data.hasNextPage
+      const timer = setTimeout(() => {
+        // 是否有数据
+        this.isEmpty = !data.total
+        // 关闭加载中
+        this.isLoading = false
+        this.loadingTime = 0
+        clearTimeout(timer)
+      }, this.loadingTime)
+    },
+    // 主动刷新
+    refresh (time = 150) {
+      this.showLoading = true
+      // 隐藏空数据
+      this.isEmpty = false
+      const timer = setTimeout(() => {
+        this.$emit('input', {...this.pages, page: 1})
+        this.$emit('getData')
+        clearTimeout(timer)
+      }, time)
+    },
+    noLogin () {
+      this.showLoading = false
+      this.isEmpty = true
+      this.showLogin = true
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+  // 加载中动画
+  @keyframes dotFlashing {
+    0% {
+      background-color: #ccc;
+    }
+    100% {
+      background-color: #999;
+    }
+  }
+  .m-scroll{
+    // loading
+    &-loading {
+		  background: #f5f6f7;
+			flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      padding: 30rpx 0;
+      overflow: hidden;
+    }
+		&-pullLoading{
+			// 这里是关键
+			margin-top: -100rpx;
+		}
+		&-loadingTime {
+			margin: 0;
+		}
+		// 动画
+		&-icon {
+			position: relative;
+			width: 44rpx;
+			height: 44rpx;
+		}
+		&-text {
+			font-size: 28rpx;
+			color: #aaa;
+			margin-left: 6rpx;
+		}
+    // 空布局
+    &-empty{
+      padding-top: 400rpx;
+      align-items: center;
+      justify-content: center;
+      &-icon{
+        width: 350rpx;
+        height: 300rpx;
+      }
+      &-p{
+        color: #c0c4cc;
+        font-size: 26rpx
+      }
+			// 去登录
+			&-btn {
+				width: 200rpx;
+				height: 68rpx;
+				color: $color;
+				border: 1rpx solid;
+				margin-top: 30rpx;
+				font-size: 28rpx;
+				background: #fff;
+			}
+    }
+  }
+</style>

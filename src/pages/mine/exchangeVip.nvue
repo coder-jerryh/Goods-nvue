@@ -1,0 +1,204 @@
+<template>
+  <div class="container" :style='{minHeight: height}'>
+		<div class="my-score">
+			<text class="my-score-label">我的积分</text>
+			<text class="my-score-count">{{userInfo.integral}}</text>
+      <button class='my-score-btn' @click='toScore'>
+        <text class='my-score-btn-text'>去赚积分</text>
+      </button>
+		</div>
+    <ul class='vip-list'>
+      <li class='vip-item' v-for="(item, index) in vipList" :key='index' @click='exchangeVip(item)'>
+        <image class="vip-item-bg" src="../../static/openVipBg.png"/>
+        <!-- 时间 -->
+        <text class="vip-item-month">{{item.title}}</text>
+        <text class="vip-item-h1">{{name}}</text>
+        <text class="vip-item-span">{{desc}}</text>
+        <div class="vip-item-score">
+          <text class="vip-item-score-count">{{item.integral}}</text>
+          <text class="vip-item-score-label">积分</text>
+        </div>
+        <button class="vip-item-btn">
+          <text class="vip-item-btn-text">兑换</text>
+        </button>
+      </li>
+    </ul>
+	</div>
+</template>
+
+<script>
+  import {getScoreComboListApi, exchangeVipApi} from '../../api/mine.js'
+  import {mapState} from 'vuex'
+  import {Confirm, Toast} from '../../utils/popup.js'
+	
+  export default {
+		data () {
+			return {
+        height: '100%',
+        name: 'Goodins专享会员',
+        desc: '会员享查看翻译/下载图片/去除广告等特权',
+				vipList: []
+			}
+		},
+    computed: {
+      ...mapState(['userInfo'])
+    },
+		created () {
+      const safeArea = uni.getSystemInfoSync().safeArea
+      this.height = safeArea.height + 'px'
+			// #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			// #endif
+      this.getScoreCombo()
+		},
+		methods: {
+      toScore () {
+        uni.switchTab({
+           url: '/pages/score/index'
+        })
+      },
+      // 套餐列表
+      getScoreCombo () {
+        getScoreComboListApi().then(({data}) => {
+          this.userInfo.integral = data.integral
+          this.vipList = data.list
+        })
+      },
+      exchangeVip (item) {
+        Confirm(
+          '提示',
+          `确定兑换${item.title}${this.name}吗？`,
+          '确定',
+          () => {
+            exchangeVipApi({id: item.id}).then(() => {
+              Toast('success', '兑换成功！')
+              this.userInfo.integral -= item.integral
+            })
+          }
+        )
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		padding-bottom: 30rpx;
+		background: #fff;
+		/* #ifndef APP-PLUS */
+		display: block;
+    min-height: 100vh;
+		/* #endif */
+		&-bg {
+			width: 750rpx;
+		}
+	}
+	.my-score {
+		padding: 26rpx 56rpx;
+    border-bottom: 20rpx;
+    border-style: solid;
+    border-bottom-color: #f5f6f7;
+    background: #fff;
+    position: relative;
+		&-label {
+			font-size: 32rpx;
+			color: #666;
+		}
+		&-count {
+			font-size: 50rpx;
+			color: $color;
+			font-weight: bold;
+		}
+    &-btn {
+      position: absolute;
+      right: 28rpx;
+      top: 44rpx;
+      width: 180rpx;
+      height: 64rpx;
+      border-radius: 100rpx;
+      border: 1px;
+      border-style: solid;
+      border-color: $color;
+      background: #fff;
+      &-text {
+        font-size: 32rpx;
+        color: $color;
+      }
+    }
+	}
+  .vip-list {
+    padding: 30rpx 0 0;
+    align-items: center;
+    background: #fff;
+  }
+	.vip {
+		&-item {
+      background: #333132;
+      border-radius: 14rpx;
+			padding: 36rpx 34rpx;
+      width: 694rpx;
+      height: 278rpx;
+      position: relative;
+      margin-bottom: 20rpx;
+			&-bg {
+				width: 694rpx;
+				height: 278rpx;
+        position: absolute;
+        top: 0;
+        left: 0;
+			}
+      &-month {
+        position: absolute;
+        right: 0;
+        top: 0;
+        background: $color;
+        padding: 4rpx 20rpx;
+        border-radius: 0px 14rpx 0px 14rpx;
+        font-size: 26rpx;
+				color: #fff;
+      }
+			&-h1 {
+        font-weight: bold;
+				font-size: 42rpx;
+				color: #EFC979;
+				margin-bottom: 20rpx;
+			}
+			&-span {
+				color: #EFC979;
+				font-size: 26rpx;
+			}
+      &-score {
+        position: absolute;
+        left: 40rpx;
+        bottom: 28rpx;
+        flex-direction: row;
+        align-items: center;
+        &-count {
+          color: #FFFEFE;
+          font-size: 50rpx;
+          font-weight: bold;
+        }
+        &-label {
+          position: relative;
+          top: 5rpx;
+          color: #FFFEFE;
+          font-size: 26rpx;
+        }
+      }
+			&-btn {
+        position: absolute;
+        right: 40rpx;
+        bottom: 34rpx;
+				width: 208rpx;
+				height: 64rpx;
+				border-radius: 100rpx;
+				background: #EFC979;
+        border: 0;
+				&-text {
+					font-size: 32rpx;
+					color: #333;
+				}
+			}
+		}
+	}
+</style>

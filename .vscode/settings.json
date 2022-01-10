@@ -1,0 +1,10 @@
+{
+  "filewatcher.commands": [
+   {
+    "match": "\\.vue",
+    "isAsync": true,
+    "cmd": "cp ${file} ${fileDirname}/n-${fileBasenameNoExt}.nvue",
+    "event": "onFileChange"
+   }  
+  ]
+ }

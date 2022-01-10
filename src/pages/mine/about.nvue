@@ -1,0 +1,130 @@
+<template>
+  <div class="container">
+		<section class="container-section">
+      <div class="name">
+        <image class="name-logo" src='../../static/logo.png'/>
+        <text class="name-h1">Goodins</text>
+      </div>
+      <text class="intro">{{intro}}</text>
+      <ul class='cell'>
+        <li class='cell-item v-ob' @click="toAgreement('用户使用协议')">
+          <text class='cell-item-name'>用户使用协议</text>
+          <image class='cell-item-arrow' src="../../static/arrow.png" />
+        </li>
+        <li class='cell-item v-ob' @click="toAgreement('隐私协议')">
+          <text class='cell-item-name'>隐私协议</text>
+          <image class='cell-item-arrow' src="../../static/arrow.png" />
+        </li>
+        <!-- #ifdef APP-PLUS -->
+        <li class='cell-item'>
+          <text class='cell-item-name'>版本号</text>
+          <text class='cell-item-info'>V{{version}}</text>
+        </li>
+        <!-- #endif -->
+      </ul>
+    </section>
+	</div>
+</template>
+
+<script>
+	import {Confirm, Toast} from '../../utils/popup.js'
+  import {getAboutUsApi} from '../../api/mine.js'
+	export default {
+		data () {
+			return {
+        intro: ''
+			}
+		},
+		created () {
+			// #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			plus.navigator.setStatusBarBackground("#fff")
+			// #endif
+      this.getAboutUs()
+		},
+    computed: {
+      version () {
+        return getApp().globalData.version
+      }
+    },
+		methods: {
+			toUrl (url) {
+				uni.navigateTo({url})
+			},
+      // 关于我们
+      getAboutUs () {
+        getAboutUsApi().then(({data}) => {
+          this.intro = data.intro
+        })
+      },
+      // 去看协议
+      toAgreement (title) {
+        uni.navigateTo({
+           url: `/pages/common/editorPage?title=${title}&requestApi=true`
+        })
+      }
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #f5f6f7;
+    padding: 22rpx 28rpx;
+		/* #ifndef APP-PLUS */
+		display: block;
+    min-height: 100vh;
+		/* #endif */
+		&-bg {
+			width: 750rpx;
+		}
+    &-section {
+      background: #fff;
+      border-radius: 20rpx;
+      overflow: hidden;
+      padding: 0 28rpx;
+    }
+	}
+  .name {
+    align-items: center;
+    padding: 56rpx 0 60rpx;
+    &-logo {
+      width: 168rpx;
+      height: 168rpx;
+    }
+    &-h1 {
+      margin-top: 10rpx;
+      font-size: 32rpx;
+      color: #333;
+      font-weight: bold;
+    }
+  }
+  .intro {
+    color: #666;
+    font-size: 26rpx;
+    line-height: 34rpx;
+  }
+	.cell {
+    margin-top: 66rpx;
+		background: #fff;
+		&-item {
+			flex-direction: row;
+			align-items: center;
+			padding: 32rpx 0;
+			@extend .border-t;
+			&-name {
+				font-size: 32rpx;
+				color: #333;
+				flex: 1;
+			}
+			&-info {
+				color: #333;
+				font-size: 32rpx;
+			}
+			&-arrow {
+				width: 25rpx;
+				height: 25rpx;
+			}
+		}
+	}
+</style>

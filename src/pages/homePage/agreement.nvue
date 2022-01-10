@@ -1,0 +1,116 @@
+<template>
+  <section class="agreement" :class="{'agreement-pb': showBtn}" :style="{minHeight: height}">
+    <article>
+      <p class='agreement-p'>
+        <text class='agreement-text'>亲爱的用户，我们深知个人信息对您的重要性，我们将按照法律法规的规定，保护您的个人信息及隐私安全。</text>
+        <text class='agreement-text'>您可以查看完整版：</text>
+        <text class='agreement-link v-ob' @click="toAgreement('隐私协议')">《隐私政策》</text>
+        <text class='agreement-link v-ob' @click="toAgreement('用户使用协议')">《用户协议》</text>
+        <text class='agreement-text'>以便了解我们收集、使用、共享、存储信息的情况，以及对信息的保护措施。</text>
+      </p>
+      <text class='agreement-text'>1、本隐私政策适用于您通过Goodins应用程序来使用我们的产品和服务。</text>
+      <text class='agreement-text'>2、我们可能会申请读取相册权限，从相册中选取图片设置头像和存储相册权限以实现图片下载保存功能。</text>
+      <text class='agreement-text'>3、我们可能会申请读取设备信息权限，以实现推送服务和保障软件服务的安全防护。</text>
+      <text class='agreement-text'>4、为实现信息分享等功能所必需，我们可能会调用剪切板并使用与功能相关的最小必要信息，不会回传您的隐私信息。</text>
+      <text class='agreement-text'>5、如果您同意请点击下面的按钮以接受我们的服务。</text>
+    </article>
+    <div class="btns">
+      <button class="btns-btn btns-quit" @click='quitApp'><text class="btns-btn-text btns-quit-text">暂不使用</text></button>
+      <button class="btns-btn btns-agree" @click='comeApp'><text class="btns-btn-text btns-agree-text">同意</text></button>
+    </div>
+  </section>
+</template>
+
+<script>
+
+export default {
+  data () {
+    return {
+      height: 'auto'
+    }
+  },
+  onLoad (options) {
+    this.height = uni.getSystemInfoSync().safeArea.height + 'px'
+  },
+  methods: {
+    // 退出App
+    quitApp () {
+      switch (getApp().globalData.platform) {
+        case 'android':
+          plus.runtime.quit()
+          break
+        case 'ios':
+          plus.ios.import('UIApplication').sharedApplication().performSelector('exit')
+          break
+      }
+    },
+    comeApp () {
+      uni.setStorageSync('isAgreedProtocol', true)
+      uni.switchTab({
+        url: '/pages/homePage/index'
+      })
+    },
+    // 去看协议
+    toAgreement (title) {
+      uni.navigateTo({
+          url: `/pages/common/editorPage?title=${title}&requestApi=true`
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.agreement {
+  padding: 24rpx 30rpx;
+  background: #fff;
+  &-text{
+    font-size: 28rpx;
+    line-height: 45rpx;
+  }
+  &-p {
+  }
+  &-link {
+    font-size: 28rpx;
+    color: #268CF5;
+  }
+  &-pb {
+    padding-bottom: 150rpx;
+  }
+}
+.btns {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 120rpx;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 30rpx;
+  background: #fff;
+  @extend .border-t;
+  &-btn {
+    flex: 1;
+    height: 80rpx;
+    border-radius: 100rpx;
+    &-text {
+      font-size: 32rpx;
+    }
+  }
+  &-quit {
+    background: #fff;
+    margin-right: 30rpx;
+    border: 1px solid #666;
+    &-text {
+      color: #666;
+    }
+  }
+  &-agree {
+    border: 0;
+    background: $color;
+    &-text {
+      color: #fff;
+    }
+  }
+}
+</style>

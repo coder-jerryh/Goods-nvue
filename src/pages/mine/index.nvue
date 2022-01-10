@@ -1,0 +1,312 @@
+<template>
+	<div class="container" :style="{minHeight: height}">
+		<div class="info-container">
+			<div class='info' @click="toUrl('/pages/mine/userInfo', 'verifyLogin')">
+				<!-- 头像 -->
+				<m-image @click="toBloger(item)" v-if='isLogin && userInfo.avatar' :src="userInfo.avatar"
+					:imageStyle="{width: '125rpx', height: '125rpx', borderRadius: '100rpx'}" />
+				<image v-else class="info-avatar" src='../../static/defaultAvatar.png' />
+				<div class="info-title">
+					<text class="info-h1">{{isLogin ? userInfo.nickname : '去登录'}}</text>
+					<div class="info-time" v-if='isLogin && userInfo.vip_expire_date'>
+						<image class="info-vip" src="../../static/vip.png" />
+						<text class="info-span" v-if='vipOutTime'>会员已过期</text>
+						<text class="info-span"
+							v-else-if='userInfo.vip_remain_days'>会员剩余{{userInfo.vip_remain_days}}天到期</text>
+					</div>
+				</div>
+				<image class="info-arrow" src="../../static/arrow.png" />
+			</div>
+			<ul class='stat'>
+				<li class='stat-item v-ob' @click="toUrl('/pages/mine/myFocus', 'verifyLogin')">
+					<text class='stat-count'>{{userInfo.follow_blog_num || 0}}</text>
+					<text class='stat-label'>订阅</text>
+				</li>
+				<li class='stat-item v-ob' @click="toUrl('/pages/mine/myCollect', 'verifyLogin')">
+					<text class='stat-count'>{{userInfo.follow_post_num || 0}}</text>
+					<text class='stat-label'>收藏</text>
+				</li>
+				<li class='stat-item v-ob' @click="toUrl('/pages/mine/myLike', 'verifyLogin')">
+					<text class='stat-count'>{{userInfo.like_post_num || 0}}</text>
+					<text class='stat-label'>赞过</text>
+				</li>
+			</ul>
+		</div>
+		<image class="vip" @click="toUrl('/pages/mine/exchangeVip', 'verifyLogin')" src="../../static/vipBg.png" />
+		<ul class='cell'>
+			<li class='cell-item cell-item-1 v-ob' @click="toUrl('/pages/mine/scoreNote', 'verifyLogin')">
+				<image class='cell-item-icon cell-item-icon-msg' src="../../static/jifen.png" />
+				<text class='cell-item-name'>积分记录</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<li class='cell-item v-ob' @click="toUrl('/pages/mine/systemMsg', 'verifyLogin')">
+				<image class='cell-item-icon cell-item-icon-msg' src="../../static/msg.png" />
+				<text class='cell-item-name'>消息中心</text>
+				<m-badge :number='userInfo.unread_notice_num' margin='0 12rpx 0 0' zeroHidden />
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<li class='cell-item v-ob' @click="toUrl('/pages/mine/recommend', 'verifyLogin')">
+				<image class='cell-item-icon' src="../../static/tuijian.png" />
+				<text class='cell-item-name'>我要推荐</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<li class='cell-item v-ob' @click="toUrl('/pages/mine/opinion', 'verifyLogin')">
+				<image class='cell-item-icon' src="../../static/fankui.png" />
+				<text class='cell-item-name'>我要反馈</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<!-- #ifdef MP-WEIXIN -->
+			<li class='cell-item v-ob' @click="downApp()">
+				<image class='cell-item-icon' src="../../static/downloadPic.png" />
+				<text class='cell-item-name'>下载APP</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<!-- #endif -->
+			<li class='cell-item v-ob' @click="toUrl('/pages/mine/about')">
+				<image class='cell-item-icon' src="../../static/guanyu.png" />
+				<text class='cell-item-name'>关于我们</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<!-- #ifdef APP-PLUS -->
+			<li class='cell-item v-ob' @click="clearCache(cacheSize = '')">
+				<image class='cell-item-icon' src="../../static/huancun.png" />
+				<text class='cell-item-name'>清理缓存</text>
+				<text class='cell-item-info' v-if='cacheSize'>{{cacheSize}}</text>
+				<image class='cell-item-arrow' src="../../static/arrow.png" />
+			</li>
+			<!-- #endif -->
+		</ul>
+	</div>
+</template>
+
+<script>
+	import mScroll from '../../components/m-scroll/index.nvue'
+	import mImage from '../../components/m-image/index.nvue'
+	import {
+		mapGetters,
+		mapState,
+		mapActions
+	} from 'vuex'
+	import {
+		computedCache,
+		clearCache
+	} from '../../utils/cacheSetting.js'
+	import mBadge from '../../components/m-badge/index.nvue'
+	export default {
+		components: {
+			mScroll,
+			mImage,
+			mBadge
+		},
+		data() {
+			return {
+				cacheSize: '',
+				height: '100vh'
+			}
+		},
+		computed: {
+			...mapState(['userInfo']),
+			...mapGetters(['isLogin']),
+			vipOutTime() {
+				if (this.userInfo.vip_expire_date) {
+					const outTime = new Date(this.userInfo.vip_expire_date.replace(/-/g, '/')).getTime()
+					const nowTime = new Date().getTime()
+					return nowTime > outTime
+				} else {
+					return false
+				}
+			}
+		},
+		created() {
+			// #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			plus.navigator.setStatusBarBackground("#fff")
+			computedCache().then(cacheSize => {
+				this.cacheSize = cacheSize
+			})
+			const safeArea = uni.getSystemInfoSync().safeArea
+			this.height = safeArea.height + 'px'
+			// #endif
+		},
+		onShow() {
+			this.isLogin && this.getUserInfo()
+		},
+		onBackPress(options) {
+			uni.switchTab({
+				url: '/pages/homePage/index'
+			})
+			return true
+		},
+		methods: {
+			...mapActions(['getUserInfo']),
+			clearCache,
+			// 刷新列表
+			changeItem(item, index) {
+				const list = [...this.list]
+				list[index] = {
+					...item
+				}
+				this.list = [...list]
+			},
+			//下载app提示
+			downApp() {
+				uni.showModal({
+					title: '提示',
+					content: 'Goodins App已上架ios app store、华为、小米、oppo、vivo、魅族、应用宝、三星等应用市场，请到自己手机应用市场搜索下载。',
+					showCancel: false,
+					confirmText: '好的',
+				});
+			},
+			// 跳转
+			toUrl(url, type) {
+				if (type === 'verifyLogin' && !this.isLogin) {
+					url = '/pages/mine/login'
+				}
+				uni.navigateTo({
+					url
+				})
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #f5f6f7;
+		/* #ifndef APP-PLUS */
+		display: block;
+
+		/* #endif */
+		&-bg {
+			width: 750rpx;
+		}
+	}
+
+	.info-container {
+		background: #fff;
+	}
+
+	.info {
+		padding: 34rpx 0rpx;
+		background-color: #fff;
+		flex-direction: row;
+		align-items: center;
+		@extend .border-b;
+		margin: 0 36rpx;
+
+		&-h1 {
+			font-size: 36rpx;
+			color: #333;
+		}
+
+		&-time {
+			flex-direction: row;
+			margin-top: 10rpx;
+		}
+
+		&-span {
+			color: #999;
+			font-size: 28rpx;
+		}
+
+		&-vip {
+			width: 36rpx;
+			height: 36rpx;
+			margin-right: 12rpx;
+		}
+
+		&-avatar {
+			width: 125rpx;
+			height: 125rpx;
+			border-radius: 50%;
+		}
+
+		&-title {
+			margin-left: 20rpx;
+			flex: 1;
+		}
+
+		&-arrow {
+			width: 30rpx;
+			height: 30rpx;
+		}
+	}
+
+	.stat {
+		padding: 42rpx 0;
+		flex-direction: row;
+		background: #fff;
+
+		&-item {
+			flex: 1;
+			align-items: center;
+		}
+
+		&-count {
+			font-size: 36rpx;
+			color: #333;
+		}
+
+		&-label {
+			font-size: 26rpx;
+			color: #999;
+		}
+	}
+
+	.vip {
+		width: 694rpx;
+		height: 208rpx;
+		margin: 24rpx 28rpx;
+	}
+
+	.cell {
+		background: #fff;
+		margin-bottom: 30rpx;
+
+		&-item {
+			flex-direction: row;
+			align-items: center;
+			padding: 32rpx 20rpx;
+			@extend .border-t;
+
+			&-1 {
+				border-top: 0;
+
+				/* #ifndef APP-PLUS */
+				&:after {
+					display: none;
+				}
+
+				/* #endif */
+			}
+
+			&-icon {
+				width: 38rpx;
+				height: 38rpx;
+				margin-right: 28rpx;
+
+				&-msg {
+					width: 42rpx;
+					height: 42rpx;
+				}
+			}
+
+			&-name {
+				font-size: 32rpx;
+				color: #333;
+				flex: 1;
+			}
+
+			&-info {
+				color: #999;
+				font-size: 28rpx;
+				margin-right: 16rpx;
+			}
+
+			&-arrow {
+				width: 25rpx;
+				height: 25rpx;
+			}
+		}
+	}
+</style>

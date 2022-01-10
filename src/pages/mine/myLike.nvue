@@ -1,0 +1,94 @@
+<template>
+  <div class="container">
+    <!-- #ifndef APP-PLUS -->
+    <m-scroll ref='mScroll' v-model='pages' @getData='getData'>
+    <!-- #endif -->
+      <!-- 列表 -->
+      <blog-list ref='blogList' v-model='pages' @getData='getData' :list='list' @firstPage='firstPage' hasBar @changeItem='changeItem'/>
+    <!-- #ifndef APP-PLUS -->
+    </m-scroll>
+    <!-- #endif -->
+  </div>
+</template>
+
+<script>
+	import mScroll from '../../components/m-scroll/index.nvue'
+	import blogList from '../components/blog-list.nvue'
+  import {getLikeBlogListApi} from '../../api/mine.js'
+  import {mapState} from 'vuex'
+	
+  let childScroll = ''
+  export default {
+		components: {
+			blogList,
+      mScroll
+		},
+		data () {
+			return {
+        pages: {
+          page: 1
+        },
+				list: []
+			}
+		},
+    computed: {
+      ...mapState(['userInfo'])
+    },
+    onShareAppMessage () {
+			return this.shareInfo
+		},
+		onPullDownRefresh () {
+			this.$refs[childScroll].pullRefresh()
+		},
+		onReachBottom () {
+			this.$refs[childScroll].loadMore()
+		},
+		created () {
+      childScroll = getApp().globalData.platform === 'wxapp' ? 'mScroll' : 'blogList'
+			this.getData()
+		},
+		methods: {
+			getData () {
+        getLikeBlogListApi(this.pages).then(({data}) => {
+          if (this.pages.page === 1) {
+            this.list = []
+          }
+          // 不是会员，要看广告
+          if (!this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
+          // if (this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
+            data.list.push({
+              type: 'ad',
+              adpid: data.adpid,
+              wx_adpid: data.wx_adpid
+            })
+          }
+          this.list = [...this.list, ...data.list]
+          this.pages.last_create_time = data.last_create_time
+          this.$refs[childScroll].loadSuccess({
+            total: this.list.length,
+            hasNextPage: data.has_more
+          })
+        })
+			},
+      firstPage () {
+        this.pages = { page: 1 }
+        this.getData()
+      },
+			// 刷新列表
+			changeItem (item, index) {
+				const list = [...this.list]
+				list[index] = {...item}
+				this.list = [...list]
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #f5f6f7;
+    /* #ifndef APP-PLUS */
+    min-height: 100vh;
+    /* #endif */
+	}
+</style>

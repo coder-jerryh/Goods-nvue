@@ -1,0 +1,798 @@
+<template>
+	<div>
+		<list class='blog-list' :style='{height}' ref='list' @loadmore='loadMore' :loadmoreoffset='1'
+			enable-back-to-top>
+			<!-- #ifdef APP-PLUS -->
+			<refresh ref='loading' class="loading" @refresh='pullRefresh' :display="loading ? 'show' : 'hide'">
+				<image class='loading-icon' src="../../static/loading.gif" />
+				<text class='loading-text'>加载中…</text>
+			</refresh>
+			<!-- #endif -->
+			<!-- nav插槽 -->
+			<cell>
+				<slot />
+			</cell>
+			<cell v-for="(item, index) in list" :key='item.id' :ref='`item${item.id}`'>
+				<!-- 广告 -->
+				<ad class="blog-list-ad" v-if="item.type == 'ad'" :adpid="value.adpid" :unit-id="value.wx_adpid"
+					@error="onerror" />
+				<!-- 博客 -->
+				<template v-else>
+					<div class='blog-list-item' :class="'blog-list-item-' + (index + 1)" @click='currentIndex = index'>
+						<!-- 头像 -->
+						<div class="top">
+							<m-image @click="toBloger(item)" class="top-avatar" :src="item.blog.avatar"
+								:imageStyle="{width: '76rpx', height: '76rpx', borderRadius: '100rpx'}" />
+							<div class="top-title" @click="toBloger(item)">
+								<text class="top-h1">{{item.blog.remark_name || item.blog.name || '匿名'}}</text>
+								<text class="top-span">{{item.create_time}}</text>
+							</div>
+							<button class="top-btn" v-if="!item.blog.is_follow && !hideFocus"
+								@click="focusBloger(item)">
+								<text class="top-plus">+</text><text class="top-btn-text">订阅</text>
+							</button>
+							<view class="top-arrow v-ob" @click="showActionSheet(item)">
+								<image class="top-arrow-icon" src="../../static/bottom.png" />
+							</view>
+						</div>
+						<!-- 内容 -->
+						<div class="middle">
+							<template v-if='item.intro'>
+								<text
+									class="middle-content">{{item.isTranslate ? item.translateInfo : item.intro}}</text>
+								<text class="middle-translate v-ob" v-if='item.intro'
+									@click='readTranslate(item)'>{{item.isTranslate ? '查看原文' : '查看翻译'}}</text>
+							</template>
+							<!-- 视频 -->
+							<div class="video" v-if="item.media_type == 'video'">
+								<video class="video-item" :id="'myVideo-'+item.id" :src="item.media_content.url"
+									@click="playVideo(item.id)" @fullscreenchange="fullScreenChange"
+									:poster="item.media_content.cover" controls="false" />
+							</div>
+							<!-- App图片 -->
+							<!-- #ifdef APP-NVUE -->
+							<ul v-else class='pics' :class="'pics-' + item.media_content.length">
+								<li v-for="(pic, i) in item.media_content_thumb.slice(0, 9)" :key='i' class='pics-li'
+									:class="['pics-li-' + (i + 1), item.media_content.length == 4 && i == 3 ? 'pics-li-4-4' : '']"
+									@click='previewPic(item.media_content, i, item)'>
+									<m-image class="pics-item" :src="pic"
+										:imageStyle="imageStyle(item.media_content)" />
+									<text class="pics-number"
+										v-if="item.media_content.length > 9 && i == 8">{{item.media_content.length - 9}}+</text>
+								</li>
+							</ul>
+							<!-- #endif -->
+							<!-- 小程序图片 -->
+							<!-- #ifndef APP-NVUE -->
+							<swiper v-else class="pics" circular
+								:style="{width: '694rpx', height: '417rpx', 'border-radius': '2rpx'}"
+								:indicator-dots="item.media_content_thumb.length > 1" indicator-color='#ccc'
+								indicator-active-color='#fff'>
+								<swiper-item :style="{'border-radius': '2rpx'}"
+									v-for="(pic, i) in item.media_content_thumb" :key="i"
+									@click='previewPic(item.media_content, i, item)'>
+									<m-image :src='pic' :imageStyle="imageStyle()" />
+								</swiper-item>
+							</swiper>
+							<!-- #endif -->
+						</div>
+						<!-- 操作栏 -->
+						<ul class="bottom">
+							<li class='bottom-item v-ob' @click='showShare(item)'>
+								<image class='bottom-icon' src="../../static/share.png" />
+								<text class='bottom-text'>分享</text>
+							</li>
+							<li class='bottom-item v-ob' @click='collectBlog(item)'>
+								<image class='bottom-icon' v-if="item.is_collect" src="../../static/collects.png" />
+								<image class='bottom-icon' v-else src="../../static/collect.png" />
+								<text class='bottom-text' :class="{'bottom-text-orange': item.is_collect}"
+									v-if="item.collect_num">{{item.collect_num}}</text>
+							</li>
+							<li class='bottom-item v-ob' @click='likeBlog(item)'>
+								<image class='bottom-icon' v-if="item.is_like" src="../../static/goods.png" />
+								<image class='bottom-icon' v-else src="../../static/good.png" />
+								<text class='bottom-text' :class="{'bottom-text-orange': item.is_like}"
+									v-if="item.like_num">{{item.like_num}}</text>
+							</li>
+						</ul>
+					</div>
+				</template>
+			</cell>
+			<!-- 上拉加载 -->
+			<!-- #ifdef APP-PLUS -->
+			<cell class="loading" v-if='!loading && hasNextPage'>
+				<image class='loading-icon' src="../../static/loading.gif" />
+				<text class='loading-text'>加载中…</text>
+			</cell>
+			<!-- #endif -->
+		</list>
+		<image src="../../static/backTop.png" class="backTop" :class="{'backTop-show': value.page >= 2}"
+			@click='backTop' />
+		<m-popup title='分享给好友' v-model="showPopup" height="295rpx">
+			<div slot='content' class="shareBlog" :class="{'shareBlog-hasBar': hasBar}">
+				<button class="shareBlog-item v-ob opacity" open-type='share' @click='shareBlog'>
+					<image class='shareBlog-icon' src="../../static/wx.png" />
+					<text class='shareBlog-text'>微信好友</text>
+				</button>
+				<button class="shareBlog-item v-ob opacity" @click="downloadFile">
+					<image class='shareBlog-icon' src="../../static/downloadPic.png" />
+					<text class='shareBlog-text'>{{currentItem.media_type == 'video' ? '下载视频' : '下载图片'}}</text>
+				</button>
+			</div>
+		</m-popup>
+		<!-- <m-preview ref='mPreview' :customNav='customNav' hasBar/> -->
+	</div>
+</template>
+
+<script>
+	import {
+		Toast,
+		Confirm
+	} from '../../utils/popup.js'
+	import mPopup from '../../components/m-popup/index.nvue'
+	import mImage from '../../components/m-image/index.nvue'
+	// import mPreview from '../../components/m-preview/index.nvue'
+	import {
+		mapGetters,
+		mapMutations,
+		mapState
+	} from 'vuex'
+	import {
+		dateFilter
+	} from '../../utils/filters.js'
+	import {
+		followBlogerApi,
+		unFollowBlogerApi,
+		collowBlogeApi,
+		unCollectBlogApi,
+		likeBlogeApi,
+		unLikeBlogApi,
+		readTranslateApi,
+		downloadFileApi
+	} from '../../api/homePage.js'
+	import config from '../../config/index.js'
+	import {
+		shareAppToMp
+	} from '../../utils/method.js'
+	const toLogin = () => {
+		uni.navigateTo({
+			url: '/pages/mine/login'
+		})
+	}
+	// #ifdef APP-NVUE
+	const dom = uni.requireNativePlugin('dom')
+	// #endif
+	export default {
+		props: {
+			value: Object,
+			list: Array,
+			customNav: Boolean,
+			hideFocus: Boolean,
+			hasBar: Boolean,
+			refreshCollect: Boolean,
+			refreshFocus: Boolean,
+			reduceHeight: Number
+		},
+		components: {
+			mPopup,
+			mImage,
+			// mPreview
+		},
+		data() {
+			return {
+				config,
+				loading: false,
+				height: '100%',
+				hasNextPage: true,
+				showPopup: false,
+				currentIndex: null,
+				currentItem: {},
+				isBlogerPage: false
+			}
+		},
+		created() {
+			const routes = getCurrentPages() // 获取当前打开过的页面路由数组
+			const route = routes[routes.length - 1].route
+			this.isBlogerPage = route === 'pages/homePage/bloger'
+
+			const safeArea = uni.getSystemInfoSync().safeArea
+			// #ifdef APP-PLUS
+			if (this.reduceHeight) {
+				this.height = safeArea.height - this.reduceHeight + 'px'
+			} else {
+				this.height = safeArea.height + safeArea.top + 'px'
+			}
+			// #endif
+		},
+		computed: {
+			...mapState(['userInfo', 'shareInfo']),
+			...mapGetters(['isLogin'])
+		},
+		methods: {
+			...mapMutations(['setShare']),
+			pullRefresh() {
+				// 重置loadmore
+				this.$refs.list.resetLoadmore()
+				this.loading = true
+				this.hasNextPage = false
+				const pages = {
+					...this.value,
+					page: 1
+				}
+				delete pages.last_create_time
+				this.$emit('input', pages)
+				this.$emit('getData')
+			},
+			loadMore() {
+				if (!this.hasNextPage) return
+				this.$emit('input', {
+					...this.value,
+					page: this.value.page + 1
+				})
+				this.$emit('getData')
+			},
+			loadSuccess(data) {
+				this.hasNextPage = data.hasNextPage
+				this.loading = false
+				uni.stopPullDownRefresh()
+			},
+			backTop() {
+				// #ifdef APP-NVUE
+				const el = this.$refs[`item${this.list[0].id}`][0]
+				dom.scrollToElement(el, {
+					offset: 0,
+					animated: getApp().globalData.platform === 'ios'
+				})
+				// #endif
+
+				// #ifndef APP-NVUE
+				uni.pageScrollTo({
+					scrollTop: 0,
+					duration: 300
+				})
+				// #endif
+			},
+			dateFilter,
+			onerror(e) {
+				Toast('warning', `${e.detail.errMsg}(${this.value.adpid})`)
+			},
+			//播放视频
+			playVideo(id) {
+				this.videoContext = uni.createVideoContext('myVideo-' + id, this);
+				this.videoContext.requestFullScreen({
+					direction: 0
+				});
+				this.videoContext.play()
+			},
+			fullScreenChange(e) {
+				if (!e.detail.fullScreen) {
+					this.videoContext.pause()
+					this.showvideo = false
+				}
+			},
+			// 查看翻译
+			readTranslate(item) {
+				if (!this.isLogin) return toLogin()
+				const translate = () => {
+					if (item.isTranslate) {
+						item.isTranslate = false
+						this.changeItem()
+					} else if (!item.translateInfo) {
+						readTranslateApi({
+							id: item.id,
+							type: 'post'
+						}).then(({
+							data
+						}) => {
+							this.$set(item, 'isTranslate', true)
+							this.$set(item, 'translateInfo', data.content)
+							this.changeItem()
+							if (!this.userInfo.is_vip) {
+								Toast('warning', `翻译成功，积分-${data.dec_integral}`)
+							}
+							uni.setStorageSync('translateReduceScore', true)
+						})
+					} else {
+						item.isTranslate = true
+						this.changeItem()
+					}
+				}
+				// 首次翻译需要告知用户将扣除积分
+				if (!this.userInfo.is_vip && !uni.getStorageSync('translateReduceScore')) {
+					Confirm(
+						'提示',
+						'查看翻译内容将扣除积分',
+						'确定翻译',
+						() => {
+							translate()
+						}
+					)
+				} else {
+					// 之后不需要再提示
+					translate()
+				}
+			},
+			// 打开菜单📖
+			showActionSheet(item) {
+				if (!this.isLogin) return toLogin()
+				const that = this
+				const itemList = [item.blog.is_follow && !this.hideFocus ? '取消订阅' : '', '举报'].filter(item => item)
+				uni.showActionSheet({
+					itemList,
+					success({
+						tapIndex
+					}) {
+						const menu = itemList[tapIndex]
+						if (menu === '取消订阅') {
+							that.focusBloger(item)
+						} else {
+							that.reportBloger(item)
+						}
+					}
+				})
+			},
+			// 订阅💗
+			focusBloger(item) {
+				if (!this.isLogin) return toLogin()
+				if (item.blog.is_follow) {
+					Confirm(
+						'提示',
+						'确定取消订阅吗？',
+						'确定',
+						() => {
+							unFollowBlogerApi({
+								id: item.blog.id
+							}).then(() => {
+								item.blog.is_follow = false
+								Toast('success', '已取消订阅！')
+								if (this.refreshFocus) {
+									this.$emit('firstPage')
+								} else {
+									this.changeItem()
+								}
+							})
+						}
+					)
+				} else {
+					followBlogerApi({
+						id: item.blog.id
+					}).then(data => {
+						item.blog.is_follow = true
+						Toast('success', '已订阅！')
+						this.changeItem()
+					})
+				}
+			},
+			// 收藏📦
+			collectBlog(item) {
+				if (!this.isLogin) return toLogin()
+				if (item.is_collect) {
+					Confirm(
+						'提示',
+						'确定取消收藏吗？',
+						'确定',
+						() => {
+							unCollectBlogApi({
+								id: item.id
+							}).then(() => {
+								item.is_collect = false
+								Toast('success', '已取消收藏！')
+								if (this.refreshCollect) {
+									this.$emit('firstPage')
+								} else {
+									this.changeItem()
+								}
+							})
+						}
+					)
+				} else {
+					collowBlogeApi({
+						id: item.id
+					}).then(() => {
+						item.is_collect = true
+						Toast('success', '已收藏！')
+						this.changeItem()
+					})
+				}
+			},
+			// 点赞👍
+			likeBlog(item) {
+				if (!this.isLogin) return toLogin()
+				const requestApi = item.is_like ? unLikeBlogApi : likeBlogeApi
+				requestApi({
+					id: item.id
+				})
+				item.is_like = !item.is_like
+				if (!String(item.like_num).includes('w')) {
+					item.like_num += item.is_like ? 1 : -1
+				}
+				this.changeItem()
+			},
+			// 举报👮
+			reportBloger(item) {
+				uni.navigateTo({
+					url: `/pages/mine/report?id=${item.id}&type=reportPost&bloger=${item.blog.remark_name || item.blog.name}`
+				})
+			},
+			// 分享➡
+			showShare(item) {
+				if (!this.isLogin) return toLogin()
+				this.currentItem = {
+					...item
+				}
+				this.showPopup = true
+			},
+			// 修改源数据
+			changeItem() {
+				this.$emit('changeItem', this.list[this.currentIndex], this.currentIndex)
+			},
+			// 博主页面
+			toBloger(item) {
+				const routes = getCurrentPages() // 获取当前打开过的页面路由数组
+				const route = routes[routes.length - 1].route
+				if (this.isBlogerPage) return
+				uni.navigateTo({
+					url: `/pages/homePage/bloger?id=${item.blog.id}`
+				})
+			},
+			// 分享
+			shareBlog() {
+				const item = this.list[this.currentIndex]
+				if (this.isBlogerPage) {
+					this.setShare({
+						title: item.blog.remark_name || item.blog.name, // 转发后 所显示的title
+						path: `/pages/homePage/bloger?id=${item.blog.id}&shareUid=${this.userInfo.uid || ''}`, // 相对的路径
+						imageUrl: item.blog.share_img
+					})
+				} else {
+					this.setShare({
+						title: item.blog.intro || item.blog.name || item.blog.remark_name, // 转发后 所显示的title
+						path: `/pages/homePage/bloger?id=${item.blog.id}&shareUid=${this.userInfo.uid || ''}`, // 相对的路径
+						imageUrl: item.media_type === 'video' ? item.media_content.cover : item.media_content[0]
+					})
+				}
+				// 小程序点击就关闭分享弹窗
+				// #ifndef APP-PLUS
+				this.showPopup = false
+				// #endif
+
+				// #ifdef APP-PLUS
+				shareAppToMp(this.shareInfo, () => {
+					this.showPopup = false
+				})
+				// #endif
+			},
+			// 获取图片大小
+			imageStyle(pics = []) {
+				if (getApp().globalData.platform === 'wxapp') {
+					return {
+						width: '694rpx',
+						height: '417rpx',
+						borderRadius: '2rpx'
+					}
+				} else {
+					if (pics.length === 1) {
+						return {
+							width: '462rpx',
+							height: '347rpx',
+							borderRadius: '2rpx'
+						}
+					} else {
+						return {
+							width: '225rpx',
+							height: '225rpx',
+							borderRadius: '2rpx'
+						}
+					}
+				}
+			},
+			// 下载图片
+			downloadFile() {
+				let reduceScore = 0
+				// 视频类型
+				if (this.currentItem.media_type === 'video') {
+					const downloadVideo = () => {
+						const that = this
+						Toast('loading', '下载中…')
+						uni.downloadFile({
+							url: this.currentItem.media_content.url,
+							success: (res) => {
+								if (res.statusCode === 200) {
+									uni.saveVideoToPhotosAlbum({
+										filePath: res.tempFilePath,
+										success: () => {
+											if (!that.userInfo.is_vip) {
+												Toast('success', `视频保存成功，积分-${reduceScore}`)
+											} else {
+												Toast('success', '视频保存成功！')
+											}
+											that.showPopup = false
+										}
+									})
+								}
+							}
+						})
+					}
+					if (!this.userInfo.is_vip) {
+						Confirm(
+							'提示',
+							'下载视频扣除积分',
+							'确定下载',
+							() => {
+								downloadFileApi({
+									id: this.currentItem.id
+								}).then(({
+									data
+								}) => {
+									downloadVideo()
+									reduceScore = data.dec_integral
+								})
+							}
+						)
+					} else {
+						downloadVideo()
+					}
+				} else {
+					uni.setStorageSync('imageList', this.currentItem.media_content)
+					uni.navigateTo({
+						url: `/pages/homePage/downloadImage?blogId=${this.currentItem.id}`
+					})
+					this.showPopup = false
+				}
+			},
+			previewPic(urls, current, info) {
+				uni.previewImage({
+					urls,
+					current,
+					showmenu: false,
+					longPressActions: {
+						success: data => {
+							plus.nativeUI.closePreviewImage()
+							uni.setStorageSync('imageList', urls)
+							uni.navigateTo({
+								url: '/pages/homePage/downloadImage'
+							})
+						}
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.blog-list {
+		&-item {
+			border-bottom: 20rpx solid #f5f6f7;
+			padding: 22rpx 26rpx 0;
+			background-color: #fff;
+
+			&-1 {
+				margin-top: 20rpx;
+			}
+		}
+
+		&-ad {
+			border-bottom: 20rpx solid #f5f6f7;
+		}
+	}
+
+	.backTop {
+		width: 60rpx;
+		height: 60rpx;
+		border-radius: 60rpx;
+		background: #fff;
+		position: fixed;
+		right: 20rpx;
+		bottom: 20rpx;
+		z-index: -10;
+		transition-property: opacity, zIndex;
+		transition-duration: 0.2s;
+		transition-timing-function: ease;
+		opacity: 0;
+
+		&-show {
+			z-index: 1;
+			opacity: 1;
+		}
+	}
+
+	.loading {
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		width: 750rpx;
+		padding: 30rpx 0;
+
+		// 动画
+		&-icon {
+			position: relative;
+			width: 44rpx;
+			height: 44rpx;
+		}
+
+		&-text {
+			font-size: 28rpx;
+			color: #aaa;
+			margin-left: 6rpx;
+		}
+	}
+
+	.top {
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+
+		&-h1 {
+			font-size: 32rpx;
+			color: #333;
+		}
+
+		&-span {
+			color: #999;
+			font-size: 24rpx;
+		}
+
+		&-title {
+			margin-left: 26rpx;
+			flex: 1;
+		}
+
+		&-btn {
+			width: 125rpx;
+			height: 50rpx;
+			border: 1px solid #FF9B35;
+			border-radius: 100rpx;
+			background: #fff;
+
+			&-text {
+				font-size: 26rpx;
+				color: #FF9B35;
+			}
+		}
+
+		&-plus {
+			font-size: 36rpx;
+			color: #FF9B35;
+			position: relative;
+			top: -2rpx;
+			margin-right: 4rpx;
+		}
+
+		&-arrow {
+			padding: 15rpx;
+			margin-right: -15rpx;
+
+			&-icon {
+				width: 25rpx;
+				height: 25rpx;
+			}
+		}
+	}
+
+	.middle {
+		&-content {
+			margin-top: 18rpx;
+			color: #333;
+			font-size: 30rpx;
+			line-height: 42rpx;
+		}
+
+		&-translate {
+			color: #268CF5;
+			font-size: 30rpx;
+		}
+	}
+
+	.pics {
+		flex-direction: row;
+		flex-wrap: wrap;
+		padding-bottom: 20rpx;
+		margin-top: 10rpx;
+
+		&-li {
+			position: relative;
+			margin: 6rpx 0;
+
+			&-2,
+			&-5,
+			&-8 {
+				margin: 6rpx 10rpx;
+			}
+
+			&-4-4 {
+				margin-left: 12rpx;
+			}
+		}
+
+		&-number {
+			border-radius: 4rpx;
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			right: 0;
+			left: 0;
+			background-color: rgba(0, 0, 0, 0.4);
+			text-align: center;
+			line-height: 225rpx;
+			color: #fff;
+			font-size: 42rpx;
+		}
+
+		&-4 {
+			width: 500rpx;
+		}
+	}
+
+	.video {
+		margin-top: 10rpx;
+		border-radius: 4rpx;
+		overflow: hidden;
+
+		&-item {
+			width: 700rpx;
+			height: 420rpx;
+		}
+	}
+
+	.bottom {
+		@extend .border-t;
+		flex-direction: row;
+		justify-content: space-between;
+
+		&-item {
+			padding: 20rpx 0 22rpx;
+			flex-direction: row;
+			align-items: center;
+			justify-content: center;
+			flex: 1;
+		}
+
+		&-icon {
+			width: 28rpx;
+			height: 28rpx;
+		}
+
+		&-text {
+			color: #666;
+			font-size: 26rpx;
+			margin-left: 6rpx;
+
+			&-orange {
+				color: $color;
+			}
+		}
+	}
+
+	.shareBlog {
+		padding: 10rpx 30rpx 30rpx;
+
+		/* #ifndef APP-PLUS */
+		&-hasBar {
+			padding-bottom: calc(30rpx + env(safe-area-inset-bottom));
+		}
+
+		/* #endif */
+		flex-direction: row;
+		justify-content: center;
+
+		&-item {
+			align-items: center;
+			margin: 0 86rpx;
+			flex-direction: column;
+			background: transparent;
+			border: 0;
+		}
+
+		&-icon {
+			width: 84rpx;
+			height: 84rpx;
+		}
+
+		&-text {
+			font-size: 28rpx;
+			color: #333;
+			margin-top: 20rpx;
+		}
+	}
+</style>

@@ -1,0 +1,560 @@
+<template>
+	<div class="container">
+		<!-- 列表 -->
+		<!-- #ifndef APP-PLUS -->
+		<m-scroll ref='mScroll' v-model='pages' @getData='getData'>
+			<!-- #endif -->
+			<!-- 列表 -->
+			<blog-list ref='blogList' :list='blogList' @changeItem='changeItem' customNav hasBar hideFocus
+				v-model='pages' @getData='getData'>
+				<m-nav showBack>
+					<image class="container-bg" src="../../static/blogerBg.png" mode='widthFix' />
+				</m-nav>
+				<div class="bloger">
+					<m-image :src='blogerInfo.avatar'
+						:imageStyle="{width: '125rpx', height: '125rpx', borderRadius: '100rpx'}" />
+					<div class="bloger-title">
+						<text class="bloger-name">{{blogerInfo.remark_name || blogerInfo.name || '加载中…'}}</text>
+						<span class='bloger-stat'>
+							<text class="bloger-label">帖子</text>
+							<text class="bloger-count">{{blogerInfo.post_num || 0}}</text>
+							<text class="bloger-label bloger-label-fans">粉丝</text>
+							<text class="bloger-count">{{blogerInfo.fans_num || 0}}</text>
+						</span>
+					</div>
+					<button class="bloger-btn" :class="{'bloger-btn-disabled': blogerInfo.is_follow}"
+						@click="focusBloger($event, blogerInfo)">
+						<text class="bloger-plus" v-if="!blogerInfo.is_follow">+</text><text class="bloger-btn-text"
+							:class="{'bloger-btn-text-disabled': blogerInfo.is_follow}">{{blogerInfo.is_follow ? '已订阅' : '订阅'}}</text>
+					</button>
+					<view class="bloger-arrow v-ob" @click="showActionSheet">
+						<image class="bloger-arrow-icon" src="../../static/bottom.png" />
+					</view>
+				</div>
+				<div class="intro" v-if='blogerInfo.intro' @click="displayIntro = !displayIntro">
+					<text class="intro-text"
+						:class="{'intro-text-display': displayIntro}">简介：{{blogerInfo.intro || ''}}</text>
+					<image v-if='blogerInfo.intro.length > 45' class="intro-down"
+						:class="{'intro-down-display': displayIntro}" src="../../static/bottom.png" />
+				</div>
+				<!-- 推荐博主 -->
+				<text class="h2">推荐博主</text>
+				<!-- 博主列表 -->
+				<scroll-view scroll-x class="bloger-list">
+					<div class='bloger-list-item' v-for="(item, index) in recommendBloger" :key='item.id'
+						@click='toBloger(item)'>
+						<m-image :src='item.avatar'
+							:imageStyle="{width: '80rpx', height: '80rpx', borderRadius: '100rpx'}" />
+						<text class="bloger-list-name">{{item.name}}</text>
+						<text class="bloger-list-name2">{{item.remark_name}}</text>
+						<button class="bloger-list-btn" :class="{'bloger-list-btn-disabled': item.is_follow}"
+							@click.stop="focusBloger($event, item)">
+							<text class="bloger-list-plus" v-if="!item.is_follow">+</text><text
+								class="bloger-list-btn-text"
+								:class="{'bloger-list-btn-text-disabled': item.is_follow}">{{item.is_follow ? '已订阅' : '订阅'}}</text>
+						</button>
+						<image @click='delBloger(index)' class="bloger-list-close v-ob" src="../../static/close2.png" />
+					</div>
+				</scroll-view>
+			</blog-list>
+			<!-- #ifndef APP-PLUS -->
+		</m-scroll>
+		<!-- #endif -->
+	</div>
+</template>
+
+<script>
+	import mNav from '../../components/m-nav/index.nvue'
+	import blogList from '../components/blog-list.nvue'
+	import mScroll from '../../components/m-scroll/index.nvue'
+	import mImage from '../../components/m-image/index.nvue'
+	import {
+		Confirm,
+		Toast
+	} from '../../utils/popup.js'
+	import {
+		getBlogerInfoApi,
+		getBlogerBlogApi,
+		followBlogerApi,
+		unFollowBlogerApi,
+		shieldBlogerApi
+	} from '../../api/homePage.js'
+	import {
+		mapGetters,
+		mapState,
+		mapMutations
+	} from 'vuex'
+
+	const toLogin = () => {
+		uni.navigateTo({
+			url: '/pages/mine/login'
+		})
+	}
+	let childScroll = ''
+	export default {
+		components: {
+			blogList,
+			mScroll,
+			mNav,
+			mImage
+		},
+		data() {
+			return {
+				pages: {
+					page: 1,
+					last_create_time: ''
+				},
+				scrollTop: 0,
+				blogerInfo: {
+					intro: ''
+				},
+				recommendBloger: [],
+				blogList: [],
+				blogerId: '',
+				displayIntro: false,
+				avatar: 'https://himg.bdimg.com/sys/portraitn/item/public.1.aad81ae4.OK7fJ14XyuTYKcEhMVO-8w',
+				list: [],
+				navTop: 0,
+				barHeight: 0,
+				/** @Tab **/
+				tabs: {
+					1: '订阅',
+					2: '推荐'
+				},
+				type: 1
+			}
+		},
+		computed: {
+			...mapState(['shareInfo', 'userInfo']),
+			...mapGetters(['isLogin'])
+		},
+		onShareAppMessage() {
+			return this.shareInfo
+		},
+		onPullDownRefresh() {
+			this.$refs[childScroll].pullRefresh()
+		},
+		onReachBottom() {
+			this.$refs[childScroll].loadMore()
+		},
+		// onPageScroll ({scrollTop}) {
+		//   this.scrollTop = scrollTop
+		// },
+		onLoad(options) {
+			if (options.scene) {
+				// 解码二维码
+				this.blogerId = unescape(options.scene).split('=')[1];
+			}else{
+				this.blogerId = options.id
+			}
+			childScroll = getApp().globalData.platform === 'wxapp' ? 'mScroll' : 'blogList'
+			// 设置样式
+			this.setStyle()
+			this.getData()
+		},
+		methods: {
+			...mapMutations(['setShare']),
+			// 博主信息
+			getData() {
+				let requestApi = getBlogerBlogApi
+				let params = {
+					id: this.blogerId
+				}
+				if (this.pages.page === 1) {
+					requestApi = getBlogerInfoApi
+				} else {
+					params.last_create_time = this.pages.last_create_time
+				}
+				requestApi(params).then(({
+					data
+				}) => {
+					if (this.pages.page === 1) {
+						this.blogList = []
+						this.blogerInfo = {
+							...data,
+							...data.blog_info
+						}
+						this.recommendBloger = data.recom_bloger
+						this.setShare({
+							title: this.blogerInfo.remark_name || this.blogerInfo.name, // 转发后 所显示的title
+							path: `/pages/homePage/bloger?id=${this.blogerInfo.id}&shareUid=${this.userInfo.uid || ''}`, // 相对的路径
+							imageUrl: this.blogerInfo.share_img
+						})
+					}
+					const post_list = data.post_list.map(item => {
+						return {
+							...item,
+							blog: this.blogerInfo
+						}
+					})
+					// 不是会员，要看广告
+					if (!this.userInfo.is_vip && data.post_list.length && (data.adpid || data.wx_adpid)) {
+						// if (this.userInfo.is_vip && data.post_list.length && (data.adpid || data.wx_adpid)) {
+						post_list.push({
+							type: 'ad',
+              adpid: data.adpid,
+              wx_adpid: data.wx_adpid
+						})
+					}
+					this.blogList = [...this.blogList, ...post_list]
+					this.pages.last_create_time = data.last_create_time
+					this.$refs[childScroll].loadSuccess({
+						total: this.blogList.length,
+						hasNextPage: data.has_more
+					})
+				})
+			},
+			// 打开菜单📖
+			showActionSheet() {
+				const that = this
+				uni.showActionSheet({
+					itemList: ['举报', '拉黑'],
+					success({
+						tapIndex
+					}) {
+						if (tapIndex === 1) {
+							Confirm(
+								'提示',
+								'确定拉黑该博主吗？',
+								'确定',
+								() => {
+									shieldBlogerApi({
+										id: that.blogerInfo.id
+									}).then(() => {
+										Toast('success', '已拉黑博主')
+									})
+								}
+							)
+						} else {
+							uni.navigateTo({
+								url: `/pages/mine/report?id=${that.blogerInfo.id}&type=reportBlog&bloger=${that.blogerInfo.remark_name || that.blogerInfo.name}`
+							})
+						}
+					}
+				})
+			},
+			// 博主页面
+			toBloger(item) {
+				uni.navigateTo({
+					url: `/pages/homePage/bloger?id=${item.id}`
+				})
+			},
+			delBloger(i) {
+				this.recommendBloger.splice(i, 1)
+			},
+			// 订阅💗
+			focusBloger(e, item) {
+				if (!this.isLogin) return toLogin()
+				if (item.is_follow) {
+					Confirm(
+						'提示',
+						'确定取消订阅吗？',
+						'确定',
+						() => {
+							unFollowBlogerApi({
+								id: item.id
+							}).then(() => {
+								item.is_follow = false
+								Toast('success', '已取消订阅！')
+								this.changeItem()
+							})
+						}
+					)
+				} else {
+					followBlogerApi({
+						id: item.id
+					}).then(data => {
+						item.is_follow = true
+						Toast('success', '已订阅！')
+						this.changeItem()
+					})
+				}
+				// #ifdef APP-NVUE
+				e.stopPropagation()
+				// #endif
+			},
+			// 切换Tab
+			changeTab(type) {
+				this.type = type
+			},
+			// 刷新列表
+			changeItem(item, index) {
+				const list = [...this.list]
+				list[index] = {
+					...item
+				}
+				this.list = [...list]
+			},
+			setStyle() {
+				const safeArea = uni.getSystemInfoSync().safeArea
+				// this.barHeight = safeArea.bottom - safeArea.height + 'rpx'
+				// #ifdef APP-PLUS
+				// 导航栏高度
+				this.navTop = safeArea.top
+				// 导航栏电池、时间颜色
+				plus.navigator.setStatusBarStyle('light') //只支持dark和light
+				// #endif
+
+				// #ifdef MP-WEIXIN
+				// 导航栏高度
+				this.navTop = uni.getMenuButtonBoundingClientRect().top + 6
+				// #endif
+			},
+			back() {
+				uni.navigateBack()
+			},
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #fff;
+		/* #ifndef APP-PLUS */
+		padding-bottom: calc(env(safe-area-inset-bottom));
+
+		/* #endif */
+		&-bg {
+			width: 750rpx;
+		}
+	}
+
+	.title {
+		position: fixed;
+		left: 0;
+		right: 0;
+		flex-direction: row;
+		justify-content: center;
+		align-items: center;
+		z-index: 999;
+		background: #fff;
+		padding-bottom: 20rpx;
+
+		&-text {
+			font-size: 32rpx;
+			color: #000;
+		}
+
+		&-back {
+			position: absolute;
+			left: 28rpx;
+			width: 40rpx;
+			height: 40rpx;
+		}
+	}
+
+	.bloger {
+		flex-direction: row;
+		align-items: center;
+		padding: 0 28rpx;
+		position: relative;
+		z-index: 100;
+		margin-top: -50rpx;
+
+		&-title {
+			flex: 1;
+			margin-left: 20rpx;
+		}
+
+		&-name {
+			font-size: 38rpx;
+			color: #333;
+			margin-bottom: 15rpx;
+		}
+
+		&-stat {
+			flex-direction: row;
+			align-items: center;
+		}
+
+		&-label {
+			font-size: 26rpx;
+			color: #999;
+			margin-right: 6rpx;
+
+			&-fans {
+				margin-left: 30rpx;
+			}
+		}
+
+		&-count {
+			font-size: 26rpx;
+			color: #333;
+		}
+
+		&-btn {
+			width: 125rpx;
+			height: 60rpx;
+			border: 1px solid #FF9B35;
+			border-radius: 100rpx;
+			background: #fff;
+
+			&-text {
+				position: relative;
+				top: 2rpx;
+				font-size: 26rpx;
+				color: #FF9B35;
+
+				&-disabled {
+					color: #999;
+				}
+			}
+
+			&-disabled {
+				background: #fff !important;
+				border: 1px;
+				border-style: solid;
+				border-color: #999;
+			}
+		}
+
+		&-plus {
+			font-size: 40rpx;
+			color: #FF9B35;
+			position: relative;
+			top: -3rpx;
+			margin-right: 4rpx;
+		}
+
+		&-arrow {
+			padding: 15rpx;
+			margin-right: -15rpx;
+
+			&-icon {
+				width: 25rpx;
+				height: 25rpx;
+			}
+		}
+	}
+
+	.intro {
+		margin-top: 20rpx;
+		padding: 0 28rpx;
+		flex-direction: row;
+
+		&-text {
+			color: #333;
+			font-size: 26rpx;
+			@include line(1);
+			width: 660rpx;
+
+			&-display {
+				@include line(20);
+			}
+		}
+
+		&-down {
+			margin-left: 8rpx;
+			position: relative;
+			top: 6rpx;
+			width: 26rpx;
+			height: 26rpx;
+			transform: rotateX(0);
+
+			&-display {
+				transform: rotateX(180deg);
+			}
+		}
+	}
+
+	.h2 {
+		font-size: 32rpx;
+		font-weight: bold;
+		color: $color;
+		padding: 16rpx 28rpx;
+		/* #ifndef APP-PLUS */
+		display: block;
+		/* #endif */
+	}
+
+	.bloger-list {
+		width: 750rpx;
+		flex-direction: row;
+		align-items: center;
+		padding: 0 18rpx 26rpx;
+		/* #ifndef APP-PLUS */
+		white-space: nowrap;
+
+		/* #endif */
+		&-item {
+			/* #ifndef APP-PLUS */
+			display: inline-flex;
+			/* #endif */
+			border: 1px;
+			border-style: solid;
+			border-color: #eee;
+			border-radius: 8rpx;
+			align-items: center;
+			width: 200rpx;
+			padding: 20rpx 0;
+			margin: 0 10rpx;
+			position: relative;
+		}
+
+		&-close {
+			position: absolute;
+			width: 20rpx;
+			height: 20rpx;
+			right: 12rpx;
+			top: 12rpx;
+		}
+
+		&-name {
+			color: #333;
+			font-size: 26rpx;
+			margin-top: 12rpx;
+			height: 36rpx;
+			@include line(1);
+			text-align: center;
+			padding: 0 10rpx;
+		}
+
+		&-name2 {
+			color: #999;
+			font-size: 24rpx;
+			height: 34rpx;
+			@include line(1);
+			text-align: center;
+			padding: 0 10rpx;
+		}
+
+		&-btn {
+			margin-top: 18rpx;
+			width: 148rpx;
+			height: 50rpx;
+			border: 1px solid #FF9B35;
+			border-radius: 100rpx;
+			background: #fff;
+
+			&-text {
+				font-size: 24rpx;
+				color: #FF9B35;
+				position: relative;
+				top: 2rpx;
+
+				&-disabled {
+					color: #999;
+				}
+			}
+
+			&-disabled {
+				background: #fff !important;
+				border: 1px;
+				border-style: solid;
+				border-color: #999;
+			}
+		}
+
+		&-plus {
+			font-size: 34rpx;
+			color: #FF9B35;
+			position: relative;
+			top: -2rpx;
+			margin-right: 4rpx;
+		}
+	}
+
+	.m-scroll {
+		background: #f5f6f7;
+	}
+</style>

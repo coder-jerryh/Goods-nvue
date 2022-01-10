@@ -1,0 +1,537 @@
+<template>
+  <div class="container" :class="{'container-show': !loading}">
+		<image class="scoreBg" src="../../static/scoreBg.png"/>
+		<div class="my-score" @click='toScoreNote'>
+			<text class="my-score-label">我的积分</text>
+			<text class="my-score-count">{{integral || 0}}</text>
+		</div>
+		<div class="score-sign">
+			<ul class='score-list'>
+				<li class='score-list-item' v-for="(item, index) in scoreList" :key='item.day'>
+					<div class="score-list-item-wrap" :class="{'score-list-item-wrap-disabled': item.is_checkedin}">
+						<text class="score-list-item-score" :class="{'score-list-item-score-disabled': item.is_checkedin}">{{item.integral}}</text>
+						<image v-if='item.is_checkedin' class="score-list-item-icon" src="../../static/scoreIcons.png" />
+						<image v-else class="score-list-item-icon" src="../../static/scoreIcon.png" />
+					</div>
+					<text class="score-list-item-day" :class="{'score-list-item-day-disabled': item.is_checkedin}">{{item.day}}天</text>
+				</li>
+			</ul>
+			<button class="score-sign-btn" :loading='btnLoading' @click='checkIn' :disabled='isSigned' :class="{'score-sign-btn-disabled': isSigned}"><text class="score-sign-btn-text">{{isSigned ? '今日已签到~' : '签到'}}</text></button>
+		</div>
+		<div class='task-wrap'>
+			<text class="task-wrap-title">积分任务</text>
+			<ul class='task-list'>
+				<li class='task-item' v-for="(item, index) in taskList" :key='item.type'>
+					<div class="task-item-wrap" :class="{'task-item-wrap-last': index == taskList.length - 1}">
+						<!-- 头像 -->
+						<image class="task-item-icon" v-if="item.type == 'bind_weixin'" src="../../static/wx2.png"/>
+						<image class="task-item-icon" v-if="item.type == 'ad_insert_screen'" src="../../static/chapin.png"/>
+						<image class="task-item-icon" v-if="item.type == 'invite_reg'" src="../../static/zc.png"/>
+						<image class="task-item-icon" v-if="item.type == 'ad_incentive_video'" src="../../static/jili.png"/>
+						<image class="task-item-icon" v-if="item.type == 'ad_short_video_page'" src="../../static/duanshipin.png"/>
+						<image class="task-item-icon" v-if="item.type == 'follow_official_account'" src="../../static/gz.png"/>
+						<div class="task-item-title">
+							<text class="task-item-h1">{{item.title}}</text>
+							<text class="task-item-span">{{item.description}}</text>
+						</div>
+            <!-- 短视频频道 -->
+            <button
+              v-if="item.title == '短视频频道' && item.startTask"
+              class="task-item-btn"
+              @click='completeSortVideoTask(item)'>
+							<text class="task-item-btn-text">我已完成</text>
+						</button>
+            <!-- 倒计时 -->
+            <button
+              v-else-if='item.time'
+              class="task-item-btn task-item-btn-disabled"
+              disabled>
+							<text class="task-item-btn-text task-item-btn-text-disabled">{{item.time}}s</text>
+						</button>
+						<button
+              v-else
+              class="task-item-btn"
+              :disabled='item.is_completed'
+              :class="{'task-item-btn-disabled': item.is_completed}"
+              @click="toComplete(item, index)"
+              :open-type="item.title == '邀请好友' && isLogin ? 'share' : ''">
+							<text class="task-item-btn-text" :class="{'task-item-btn-text-disabled': item.is_completed}">{{item.is_completed ? '已完成' : '去完成'}}{{item.completed_num}}/{{item.max_times}}</text>
+						</button>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</div>
+</template>
+
+<script>
+  import {getTaskInfoApi, checkInApi, completeTaskApi} from '../../api/score.js'
+  import {bindWeixinApi} from '../../api/mine.js'
+  import {Toast, Confirm} from '../../utils/popup.js'
+  import {mapState, mapGetters} from 'vuex'
+  import {copyText} from '../../utils/filters.js'
+  import config from '../../config/index.js'
+  import {shareAppToMp} from '../../utils/method.js'
+  import AD from '../../utils/ad.js'
+	
+  const toLogin = () => {
+    uni.navigateTo({
+       url: '/pages/mine/login'
+    })
+  }
+
+  export default {
+		data () {
+			return {
+        // 短视频任务相关
+        intervalTimer: null,
+        sortVideoItem: {},
+        sortVideoTime: 0,
+        sortVideoGetScoreTime: 0,
+        integral: 0,
+        btnLoading: false,
+        loading: true,
+				isSigned: false,
+				scoreList: [],
+				taskList: [],
+        scoreData: {}
+			}
+		},
+    onShareAppMessage () {
+			return this.shareInfo
+		},
+    onPullDownRefresh () {
+      this.getTaskInfo()
+		},
+		onBackPress(options) {
+			uni.switchTab({
+				url: '/pages/homePage/index'
+			})
+			return true
+		},
+    computed: {
+      ...mapState(['userInfo']),
+      ...mapGetters(['isLogin']),
+      shareInfo () {
+        const shareInfo = getApp().globalData.systemConfig.share_home
+        return {
+          title: shareInfo.title, // 转发后 所显示的title
+          path: `/pages/homePage/index?shareUid=${this.userInfo.uid || ''}`, // 相对的路径
+          imageUrl: shareInfo.img
+        }
+      }
+    },
+		created () {
+      // #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			// #endif
+      this.getTaskInfo()
+		},
+    onShow () {
+      if (uni.getStorageSync('fromLogin')) {
+        this.getTaskInfo()
+        uni.removeStorageSync('fromLogin')
+      }
+    },
+		methods: {
+      getTaskInfo () {
+        Toast('loading', '加载中…')
+        getTaskInfoApi().then(({data}) => {
+          this.scoreData = data
+          this.scoreList = data.checkin_list
+          this.isSigned = data.today_is_checkedin
+          this.integral = data.integral
+          const preventRefresh = this.taskList.find(item => item.time || item.startTask)
+          if (preventRefresh) return
+          this.taskList = data.task_list.filter(item => {
+            // 已完成最大次数
+            if (item.completed_num === item.max_times) {
+              item.is_completed = true
+            }
+            if (getApp().globalData.platform === 'wxapp') {
+              return !['绑定微信', '短视频频道'].includes(item.title)
+            } else {
+              return true
+            }
+          })
+        }).finally(() => {
+          this.loading = false
+          uni.stopPullDownRefresh()
+          uni.hideLoading()
+        })
+      },
+      toScoreNote () {
+        if (!this.isLogin) return toLogin()
+        uni.navigateTo({
+           url: '/pages/mine/scoreNote'
+        })
+      },
+      checkIn () {
+        if (this.isSigned) return
+        if (!this.isLogin) return toLogin()
+        const scoreList = [...this.scoreList]
+        const index = this.scoreList.findIndex(item => !item.is_checkedin)
+        const integral = scoreList[index].integral
+        this.btnLoading = true
+        checkInApi({hideLoading: true}).then(() => {
+          this.integral += integral
+          scoreList[index].is_checkedin = 1
+          this.scoreList = [...scoreList]
+          Toast('warning', `签到成功，积分+${integral}`)
+          this.isSigned = true
+        }).finally(() => {
+          this.btnLoading = false
+        })
+      },
+      toComplete (item, i) {
+        if (!this.isLogin) return toLogin()
+        if (item.is_completed) return
+        // 重置短视频任务
+        this.resetSortVideoTask(item)
+        switch (item.type) {
+          case 'ad_incentive_video'://激励视频
+            this.showRewardedVideo(item)
+            return
+          case 'ad_insert_screen'://插屏广告
+            this.showInterstitialAd(item)
+            return
+          case 'ad_short_video_page'://短视频频道
+		  this.sortVideoItem = item
+		  // 首次提示
+		  if (!uni.getStorageSync('showShortVideoAlert')) {
+			  Confirm('提示','返回后请点击 我已完成 按钮','确定',() => {
+			      this.showSortVideo(item)
+				  uni.setStorageSync('showShortVideoAlert', true)
+			  })
+		  }else {
+          // 之后不需要再提示
+          this.showSortVideo(item)
+			}
+            return
+          case 'bind_weixin'://绑定微信
+            this.bindWx()
+            return
+          case 'follow_official_account'://关注公众号
+            Confirm('提示','关注成功后，需手动刷新页面更新数据','确定',() => {
+			    copyText(item.extra.name, '已复制，请到微信粘贴搜索')
+			})
+			
+            return
+          case 'invite_reg'://邀请好友
+			      // #ifdef APP-PLUS
+            shareAppToMp(this.shareInfo)
+			      // #endif
+            return
+          default:
+            Toast('warning', '努力开发中…')
+            return
+        }
+      },
+      // 绑定微信
+      bindWx() {
+        const that = this
+        uni.getProvider({
+          service: 'oauth',
+          success: (res) => {
+            //支持微信、qq和微博等
+            if (~res.provider.indexOf('weixin')) {
+              uni.login({
+                provider: 'weixin',
+                success: ({authResult}) => {
+                  const params = {
+                    openid: authResult.openid,
+                    unionid: authResult.unionid,
+                    platform: getApp().globalData.platform
+                  }
+                  bindWeixinApi(params).then(() => {
+                    const isBindWxIndex = that.taskList.findIndex(item => item.type === 'bind_weixin')
+                    that.taskList[isBindWxIndex].is_completed = 1
+                    that.integral += that.taskList[isBindWxIndex].integral
+                    Toast('success', '微信绑定成功！')
+                  })
+                },
+                fail: (res) => {}
+              })
+            }
+          }
+        })
+      },
+      // 激励视频
+      showRewardedVideo (item) {
+        AD.show({
+          // adpid: 1507000689,
+          adpid: item.extra.adpid,
+          adUnitId: item.extra.wx_adpid,
+          adType: "RewardedVideo"
+        }, (res) => {
+          // 用户点击了【关闭广告】按钮
+          if (res && res.isEnded) {
+            // 正常播放结束
+            this.completeTask(item)
+          } else {
+            // 播放中途退出
+            Toast('warning', '提前关闭广告，任务未达成')
+          }
+          // 在此处理服务器回调逻辑
+        }, (err) => {
+          console.log(err)
+          const msg = err.message || err.errMsg
+          Toast('warning', `${msg}(${item.extra.adpid})`)
+        })
+      },
+      // 插屏广告
+      showInterstitialAd (item) {
+        AD.show({
+          // adpid: 1111111113,
+          adpid: item.extra.adpid,
+          adUnitId: item.extra.wx_adpid,
+          adType: "InterstitialAd"
+        }, (res) => {
+          // 正常播放结束
+          this.completeTask(item)
+          // 在此处理服务器回调逻辑
+        }, (err) => {
+          // 广告加载错误
+          const msg = err.message || err.errMsg
+          Toast('warning', `${msg}(${item.extra.adpid})`)
+        })
+      },
+      // 短视频频道
+      showSortVideo (item) {
+        plus.ad.showContentPage({
+          // adpid: 1148133230,
+          // adpid: 1111111112
+          adpid: item.extra.adpid * 1
+        }, (res) => {
+          // this.sortVideoGetScoreTime = 5
+          this.sortVideoGetScoreTime = item.extra.interval
+          this.intervalTimer = setInterval(() => {
+            this.sortVideoTime += 1
+            this.$set(item, 'startTask', true)
+            if (this.sortVideoTime === this.sortVideoGetScoreTime) {
+              clearInterval(this.intervalTimer)
+            }
+          }, 1000)
+        },  (e) => {
+          console.log(e)
+          const msg = e.message || e.errMsg
+          Toast('warning', `${msg}(${item.extra.adpid})`)
+        })
+      },
+      // 完成短视频任务
+      completeSortVideoTask (item) {
+        clearInterval(this.intervalTimer)
+        if (this.sortVideoTime && this.sortVideoGetScoreTime && this.sortVideoTime >= this.sortVideoGetScoreTime) {
+          this.completeTask(item)
+        } else {
+          Confirm(
+						'任务提示',
+						'未达到短视频任务要求的时间，是否继续浏览？',
+						'继续浏览',
+						() => {
+              this.showSortVideo(this.sortVideoItem)
+						}
+					)
+        }
+      },
+      // 完成任务
+      completeTask (item) {
+        completeTaskApi({id: item.id}).then(data => {
+          // 短视频任务
+          this.resetSortVideoTask(item)
+          this.integral += item.integral
+          Toast('warning', `任务完成，积分+${item.integral}`)
+          this.$set(item, 'completed_num', item.completed_num + 1)
+          if (item.completed_num < item.max_times) {
+            // 间隔倒计时
+            this.$set(item, 'time', item.extra.interval_space)
+            const timer = setInterval(() => {
+              this.$set(item, 'time', item.time - 1)
+              !item.time && clearInterval(timer)
+            }, 1000)
+          } else {
+            this.$set(item, 'is_completed', true)
+          }
+        })
+      },
+      // 重置短视频任务
+      resetSortVideoTask (item) {
+        clearInterval(this.intervalTimer)
+        this.$set(item, 'startTask', false)
+        this.sortVideoTime = 0
+        this.sortVideoGetScoreTime = 0
+      }
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		padding-bottom: 30rpx;
+		background: #f5f6f7;
+		/* #ifndef APP-PLUS */
+		display: block;
+    min-height: 100vh;
+		/* #endif */
+    opacity: 0;
+    transition-property: opacity;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
+		&-bg {
+			width: 750rpx;
+		}
+    &-show {
+      opacity: 1;
+    }
+	}
+	.scoreBg {
+		width: 750rpx;
+		height: 348rpx;
+	}
+	.my-score {
+		padding: 0 60rpx;
+		position: relative;
+		margin-top: -300rpx;
+		margin-bottom: 20rpx;
+		&-label {
+			font-size: 32rpx;
+			color: #fff;
+		}
+		&-count {
+			font-size: 70rpx;
+			color: #fff;
+			font-weight: bold;
+		}
+	}
+	.score-sign {
+		position: relative;
+		background: #fff;
+		margin: 0 28rpx;
+		width: 694rpx;
+		border-radius: 14rpx;
+		padding: 30rpx 22rpx 40rpx;
+		&-btn {
+			margin-top: 35rpx;
+			width: 650rpx;
+			height: 84rpx;
+			background: $color;
+			border-radius: 100rpx;
+			border: 0;
+			&-text {
+				font-size: 32rpx;
+				color: #fff;
+			}
+			&-disabled {
+				background: #ccc!important;
+			}
+		}
+	}
+	.score-list {
+		flex-direction: row;
+		justify-content: center;
+		&-item {
+			margin: 0 6rpx;
+			flex: 1;
+			align-items: center;
+			&-wrap {
+				padding: 8rpx 0;
+				width: 84rpx;
+				align-items: center;
+				background: #FFEED4;
+				border-radius: 8rpx;
+				&-disabled {
+					background: #F5F6F7;
+				}
+			}
+			&-score {
+				margin-bottom: 12rpx;
+				font-size: 26rpx;
+				color: #FF9B35;
+				&-disabled {
+					background: #F5F6F7;
+					color: #666;
+				}
+			}
+			&-icon {
+				width: 48rpx;
+				height: 48rpx;
+			}
+			&-day {
+				margin-top: 8rpx;
+				color: #FF9B35;
+				font-size: 22rpx;
+				&-disabled {
+					color: #999;
+				}
+			}
+		}
+	}
+	.task-wrap {
+		margin: 20rpx 28rpx 0;
+		border-radius: 14rpx;
+		overflow: hidden;
+		background: #fff;
+		&-title {
+			padding: 28rpx 20rpx;
+			color: $color;
+			font-size: 32rpx;
+		}
+	}
+  .task-list {
+    margin-top: -28rpx;
+  }
+	.task {
+		&-item {
+			padding: 0 24rpx;
+			background-color: #fff;
+			&-wrap {
+				padding: 28rpx 0;
+				flex-direction: row;
+				align-items: center;
+        @extend .border-b;
+				&-last {
+					border-bottom: 0;
+          /* #ifndef APP-PLUS */
+          &:after {
+            display: none;
+          }
+          /* #endif */
+				}
+			}
+			&-icon {
+				width: 98rpx;
+				height: 98rpx;
+				background: #f8f8f8;
+				border-radius: 24rpx;
+			}
+			&-h1 {
+				font-size: 32rpx;
+				color: #333;
+				margin-bottom: 10rpx;
+			}
+			&-span {
+				color: #999;
+				font-size: 26rpx;
+			}
+			&-title {
+				margin-left: 22rpx;
+				flex: 1;
+			}
+			&-btn {
+        padding: 0 18rpx;
+				height: 50rpx;
+				border: 1rpx solid #FF9B35;
+				border-radius: 100rpx;
+				background: $color;
+				&-text {
+					font-size: 26rpx;
+					color: #fff;
+				}
+				&-disabled {
+					background: #ccc!important;
+          border-color: #ccc;
+				}
+			}
+		}
+	}
+</style>

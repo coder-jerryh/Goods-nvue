@@ -1,0 +1,141 @@
+@import './assets/style/border.scss';
+// 样式重置
+$color: #FF9B35;
+$bgColor: linear-gradient(270deg, #FF701D 0%, #F9AD82 100%);
+$black: #1b1d20;
+$border: #e4e7ed;
+$red: #ff6633;
+$orange: #FF7321;
+$bg: #f7f8f9;
+$green: #03B349;
+
+.v-ob:active {
+	opacity: .7;
+}
+.fixed-center{
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  top: 0;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.number {
+  line-height: 1;
+  font-family: 'DIN Alternate';
+  font-weight: bold;
+}
+.fixed{
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  z-index: 10;
+}
+.disabled {
+	opacity: .7;
+}
+
+// 文本溢出
+@mixin line($lineNum, $width: 100%) {
+  /* 一行时 */
+	@if $lineNum == 1 {
+    // App端
+		/* #ifdef APP-PLUS */
+		lines: 1; // 1或n
+		text-overflow: ellipsis;
+		/* #endif */
+    
+		// 其他端
+		/* #ifndef APP-PLUS */
+		overflow:hidden;
+		text-overflow:ellipsis;
+		white-space:nowrap;
+		width: $width;
+		/* #endif */
+	} @else {
+    /* 多行时 */
+    
+    // App端
+		/* #ifdef APP-PLUS */
+		lines: $lineNum; // 1或n
+		text-overflow: ellipsis;
+		/* #endif */
+    
+		// 其他端
+		/* #ifndef APP-PLUS */
+		overflow: hidden;
+		-webkit-line-clamp: $lineNum;
+		display: -webkit-box;
+		text-overflow: ellipsis;
+		word-wrap: break-word;
+		white-space: normal !important;
+		-webkit-box-orient: vertical;
+		/* #endif */
+	}
+}
+
+// 小程序样式
+/* #ifdef MP-WEIXIN */
+.y-center{
+  display: flex;
+  align-items: center;
+}
+.x-center{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.xy-center{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+button{
+  overflow: hidden;
+  position: relative;
+  border: 0;
+  border-radius:6rpx;
+  font-size:30rpx;
+  color:#ffffff;
+  outline: 0;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  &::after{
+    display: none;
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    border-radius:6rpx;
+    background: rgba(0, 0, 0, 0.15);
+  }
+  &:active::after {
+    display: inline-block;
+  }
+  &[disabled]{
+    color: #fff;
+  }
+  &[disabled]:active:after{
+    display: none;
+  }
+  &.opacity{
+    width: fit-content;
+    height: fit-content;
+    background: transparent;
+    &:active:after{
+      display: none;
+    }
+  }
+}
+/* #endif */

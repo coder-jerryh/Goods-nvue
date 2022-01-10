@@ -1,0 +1,225 @@
+<template>
+  <div class="container" :style="{paddingTop: navTop + 36 + 'px'}">
+		<!-- <button class="login-btn" @click="toLogin"><text class="login-btn-text">临时登录按钮</text></button> -->
+		<!-- Tab组件 -->
+		<div class='m-tab'>
+      <ul class='m-tab-ul'>
+        <li
+          class='m-tab-li'
+          :style="{paddingTop: navTop + 'px'}"
+          v-for='(val, key) in tabs'
+          :key='key'
+          @click='changeTab(key)'>
+          <text class="m-tab-text" :class="{'m-tab-text-active': type == key}">{{val}}</text>
+        </li>
+        <li class="m-tab-border" :style="{left: type == 1 ? '30rpx' : '158rpx'}"></li>
+      </ul>
+    </div>
+    <!-- <button @click='pushMsg' style="font-size: 20rpx;">推送消息</button> -->
+		<!-- 列表 -->
+    <!-- #ifndef APP-PLUS -->
+    <m-scroll ref='mScroll' v-model='pages' @getData='getData'>
+    <!-- #endif -->
+      <blog-list v-model='pages' ref='blogList' :list='list' @changeItem='changeItem' customNav @getData='getData' :reduceHeight='36'/>
+    <!-- #ifndef APP-PLUS -->
+		</m-scroll>
+    <!-- #endif -->
+	</div>
+</template>
+
+<script>
+	import blogList from '../components/blog-list.nvue'
+	import mScroll from '../../components/m-scroll/index.nvue'
+  import {getHomePageBlogListApi, getFollowBlogListApi, testPushApi} from '../../api/homePage.js'
+  import {mapGetters, mapState} from 'vuex'
+	
+  let childScroll = ''
+  export default {
+		components: {
+			blogList,
+			mScroll
+		},
+		data () {
+			return {
+        pages: {
+          page: 1
+        },
+        height: '100%',
+				list: [],
+				navTop: 0,
+				barHeight: 0,
+				/** @Tab **/
+        tabs: {
+          1: '订阅',
+          2: '推荐'
+        },
+				type: uni.getStorageSync('token') ? 1 : 2
+			}
+		},
+    computed: {
+      ...mapState(['userInfo', 'shareInfo']),
+      ...mapGetters(['isLogin'])
+    },
+		onShareAppMessage ({from}) {
+      if (from === 'menu') {
+        const shareInfo = getApp().globalData.systemConfig.share_home
+        return {
+          title: shareInfo.title, // 转发后 所显示的title
+          path: `/pages/homePage/index?shareUid=${this.userInfo.uid || ''}`, // 相对的路径
+          imageUrl: shareInfo.img
+        }
+      } else {
+        return this.shareInfo
+      }
+		},
+		onPullDownRefresh () {
+			this.$refs[childScroll].pullRefresh()
+		},
+		onReachBottom () {
+			this.$refs[childScroll].loadMore()
+		},
+		onLoad () {
+			// 设置样式
+			this.setStyle()
+      childScroll = getApp().globalData.platform === 'wxapp' ? 'mScroll' : 'blogList'
+			this.getData()
+		},
+		methods: {
+      pushMsg () {
+        testPushApi()
+      },
+			getData () {
+        if (!this.pages.last_create_time) delete this.pages.last_create_time
+        const listApi = this.type === 1 ? getFollowBlogListApi : getHomePageBlogListApi
+        const pages = {...this.pages}
+        delete pages.adpid
+        delete pages.wx_adpid
+        listApi(pages).then(({data}) => {
+          if (this.pages.page === 1) {
+            this.list = []
+          }
+          // 不是会员，要看广告
+          if (!this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
+          // if (this.userInfo.is_vip && data.list.length && (data.adpid || data.wx_adpid)) {
+            data.list.push({
+              type: 'ad',
+              adpid: data.adpid,
+              wx_adpid: data.wx_adpid
+            })
+          }
+          this.list = [...this.list, ...data.list]
+          this.pages.last_create_time = data.last_create_time
+          this.$refs[childScroll].loadSuccess({
+            total: this.list.length,
+            hasNextPage: data.has_more
+          })
+        })
+			},
+			// 切换Tab
+			changeTab (type) {
+        if (!this.isLogin && type == 1) {
+          return this.toLogin()
+        } 
+				this.type = Number(type)
+        this.list = []
+			  this.$refs[childScroll].pullRefresh()
+			},
+			// 刷新列表
+			changeItem (item, index) {
+				const list = [...this.list]
+				list[index] = {...item}
+				this.list = [...list]
+			},
+			toLogin () {
+				uni.navigateTo({url: '/pages/mine/login'})
+			},
+			setStyle () {
+				const safeArea = uni.getSystemInfoSync().safeArea
+        this.height = safeArea.height + 'px'
+				// this.barHeight = safeArea.bottom - safeArea.height + 'rpx'
+				// #ifdef APP-PLUS
+				// 导航栏高度
+				this.navTop = safeArea.top
+				// 导航栏电池、时间颜色
+				plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+				// #endif
+				
+				// #ifdef MP-WEIXIN
+				// 导航栏高度
+				this.navTop = uni.getMenuButtonBoundingClientRect().top + 8
+				// #endif
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #f5f6f7;
+    /* #ifndef APP-PLUS */
+    min-height: 100vh;
+    /* #endif */
+	}
+	.login-btn {
+		position: fixed;
+		bottom: 20rpx;
+		left: 20rpx;
+		background: $color;
+		border-radius: 20rpx;
+		border: 0;
+		padding: 6rpx 12rpx;
+    z-index: 1;
+		&-text {
+			font-size: 24rpx;
+			color: #fff;
+		}
+	}
+  .m-tab {
+		position: fixed;
+		top: 0;
+		left: 0;
+		right: 0;
+		box-shadow: 0px 1px 2px 0px rgba(81, 87, 100, 0.1);
+		background-color: #fff;
+		z-index: 10;
+    flex-direction: row;
+    justify-content: center;
+    &-ul {
+      flex-direction: row;
+      justify-content: center;
+      position: relative;
+    }
+    &-li {
+      padding: 26rpx 0 0;
+      width: 128rpx;
+      flex-direction: row;
+      justify-content: center;
+    }
+    &-text {
+      font-size: 32rpx;
+      padding-bottom: 24rpx;
+      color: #999;
+      transition-property: color;
+      transition-duration: 0.2s;
+      transition-timing-function: ease;
+      padding-top: 2rpx;
+      &-active {
+        padding-top: 0rpx;
+        font-weight: bold;
+        font-size: 34rpx;
+        color: #333;
+      }
+    }
+    &-border {
+      bottom: 0;
+      position: absolute;
+      width: 68rpx;
+      height: 8rpx;
+      background-color: #FF9B35;
+      border-radius: 100rpx;
+      transition-property: left;
+      transition-duration: 0.2s;
+      transition-timing-function: ease;
+    }
+  }
+</style>

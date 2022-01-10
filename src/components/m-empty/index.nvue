@@ -1,0 +1,48 @@
+<template>
+  <!-- 空布局 -->
+  <div class="m-empty" :style="{height: emptyHeight}">
+    <!-- 自己更换图片哟 -->
+    <image class="m-empty-icon" src="../../static/empty.png">
+    <button v-if="showBtn" class="m-scroll-empty-btn" @click="$toUrl('/pages/mine/login')">去登录</button>
+    <text v-else class='m-empty-p'>暂无数据~</text>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    showBtn: Boolean,
+    emptyHeight: {
+      type: String,
+      default: 'auto'
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+  .m-empty{
+    width: 750rpx;
+    padding-top: 400rpx;
+    align-items: center;
+    justify-content: center;
+    &-icon{
+      width: 350rpx;
+      height: 300rpx;
+    }
+    &-p{
+      color: #c0c4cc;
+      font-size: 26rpx
+    }
+    // 去登录
+    &-btn {
+      width: 200rpx;
+      height: 68rpx;
+      color: $color;
+      border: 1rpx solid;
+      margin-top: 30rpx;
+      font-size: 28rpx;
+      background: #fff;
+    }
+  }
+</style>

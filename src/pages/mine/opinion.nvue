@@ -1,0 +1,81 @@
+<template>
+	<div class="container">
+		<div class="textarea-wrap">
+			<textarea class="textarea" v-model="content" maxlength="300" placeholder="请输入您的建议或意见" />
+			<text class="fontNums">{{content.length}}/{{300}}</text>
+		</div>
+		<button class="btn" :loading='loading' @click="submit"><text class="btn-text">提交反馈</text></button>
+	</div>
+</template>
+
+<script>
+	import {Toast} from '../../utils/popup.js'
+  import {feedbackApi} from '../../api/mine.js'
+	export default {
+		data() {
+			return {
+				content: '',
+        loading: false
+			}
+		},
+		methods: {
+			submit () {
+				if (!this.content) {
+					return Toast('warning', '请输入内容')
+				}
+        this.loading = true
+        const params = {
+          content: this.content,
+          type: 'feedback'
+        }
+        feedbackApi(params).then(() => {
+          Toast('success', '反馈成功！', () => {
+            uni.navigateBack()
+          })
+        }).finally(() => {
+          this.loading = false
+        })
+			}
+		}
+	}
+</script>
+
+<style lang="scss" scoped>
+	.container {
+		padding: 28rpx;
+		align-items: center;
+	}
+	.textarea-wrap {
+		width: 694rpx;
+		border: 1px;
+		border-style: solid;
+		border-color: #ddd;
+		border-radius: 14rpx;
+		position: relative;
+	}
+	.textarea {
+		padding: 20rpx;
+		font-size: 30rpx;
+		height: 300rpx;
+		width: 694rpx;
+	}
+	.fontNums {
+		position: absolute;
+		bottom: 15rpx;
+		right: 15rpx;
+		color: #999;
+		font-size: 28rpx;
+	}
+	.btn {
+		width: 666rpx;
+		height: 84rpx;
+		background: $color;
+		border-radius: 100rpx;
+		border: 0;
+		margin-top: 70rpx;
+		&-text {
+			font-size: 32rpx;
+			color: #fff;
+		}
+	}
+</style>

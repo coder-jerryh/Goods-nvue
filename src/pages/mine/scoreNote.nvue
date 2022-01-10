@@ -1,0 +1,141 @@
+<template>
+	<div class="container">
+		<div class="score">
+			<text class="score-label">全部积分</text>
+			<text class="score-count">{{integral || userInfo.integral || 0}}</text>
+		</div>
+		<m-scroll ref='mScroll' v-model='pages' @getData='getData' nativePullLoading>
+			<ul class='score-note'>
+				<li v-for="(item, index) in list" :key='index'>
+					<text class="score-note-date" v-if="!index">{{item.month}}</text>
+					<div class='score-note-item' v-for="(childItem, i) in item.list" :key='i'>
+						<div class="score-note-title">
+							<text class="score-note-h1">{{childItem.remark_type}}</text>
+							<text class="score-note-span">{{childItem.create_time}}</text>
+						</div>
+						<text class="score-note-reduce-score" v-if="childItem.type == 'reduce'">-{{childItem.value}}</text>
+						<text class="score-note-add-score" v-else>+{{childItem.value}}</text>
+					</div>
+				</li>
+			</ul>
+		</m-scroll>
+	</div>
+</template>
+
+<script>
+	import mScroll from '../../components/m-scroll/index.nvue'
+  import {getMyScoreNoteListApi} from '../../api/mine.js'
+  import {Confirm, Toast} from '../../utils/popup.js'
+  import {mapState} from 'vuex'
+	
+  export default {
+		components: {
+			mScroll
+		},
+		data () {
+			return {
+        integral: 0,
+        pages: {
+          page: 1
+        },
+				list: []
+			}
+		},
+		onPullDownRefresh () {
+			this.$refs.mScroll.pullRefresh()
+		},
+		onReachBottom () {
+			this.$refs.mScroll.loadMore()
+		},
+    computed: {
+      ...mapState(['userInfo'])
+    },
+		created () {
+			this.getData()
+		},
+		methods: {
+			getData () {
+        getMyScoreNoteListApi(this.pages).then(({data}) => {
+          if (this.pages.page === 1) {
+            this.list = []
+          }
+          this.integral = data.integral
+          this.list = [...this.list, ...data.list]
+          this.pages.last_create_time = data.last_create_time
+          this.$refs.mScroll.loadSuccess({
+            total: this.list.length,
+            hasNextPage: data.has_more
+          })
+        })
+			},
+      firstPage () {
+        this.pages = { page: 1 }
+        this.getData()
+      },
+      // 博主页面
+			toBloger (item) {
+				uni.navigateTo({url: `/pages/homePage/bloger?id=${item.id}`})
+			},
+			// 刷新列表
+			changeItem (item, index) {
+				const list = [...this.list]
+				list[index] = {...item}
+				this.list = [...list]
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.container {
+		background: #f5f6f7;
+	}
+	.score {
+		background: #fff;
+		padding: 22rpx 28rpx;
+		&-label {
+			color: #333;
+			font-size: 32rpx;
+		}
+		&-count {
+			color: $color;
+			font-size: 70rpx;
+			font-weight: bold;
+		}
+	}
+	.score-note {
+		&-date {
+			font-size: 28rpx;
+			color: #999;
+			padding: 24rpx 28rpx;
+		}
+		&-item {
+			padding: 18rpx 28rpx;
+			background-color: #fff;
+			flex-direction: row;
+			align-items: center;
+			@extend .border-b;
+		}
+		&-h1 {
+			font-size: 32rpx;
+			color: #333;
+			margin-bottom: 6rpx;
+		}
+		&-span {
+			color: #999;
+			font-size: 26rpx;
+		}
+		&-title {
+			flex: 1;
+		}
+	
+		&-add-score {
+			font-size: 32rpx;
+			color: $color;
+		}
+		&-reduce-score {
+			font-size: 32rpx;
+			color: #333;
+		}
+	}
+</style>

@@ -1,0 +1,42 @@
+<template>
+  <div class="m-badge" :style="{margin}" v-if='show'>
+    <text class="m-badge-text">{{number}}</text>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+    margin: String,
+    number: Number,
+    zeroHidden: Boolean
+  },
+  computed: {
+    show () {
+      return (this.zeroHidden && this.number) || !this.zeroHidden
+    }
+  },
+  data () {
+    return {
+    }
+  }
+}
+</script>
+
+<style lang='scss' scoped>
+  .m-badge {
+    justify-content: center;
+    align-items: center;
+    background: #f05b53;
+    padding: 2px 7px;
+    border-radius: 100rpx;
+    &-text {
+      color: #fff;
+      font-size: 12px;
+      /* #ifdef APP-PLUS */
+      position: relative;
+      top: 1rpx;
+      /* #endif */
+    }
+  }
+</style>

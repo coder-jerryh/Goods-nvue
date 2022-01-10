@@ -1,0 +1,67 @@
+<template>
+  <section class="editor-content" :style="{minHeight: height}">
+    <rich-text v-if="requestApi" class="editor-content-article" :nodes='editorContent'></rich-text>
+    <text class="editor-content-article" v-else selectable>{{editorContent}}</text>
+  </section>
+</template>
+
+<script>
+import {getProtocolApi, getPrivacyPolicyApi, getAboutUsApi} from '../../api/mine'
+import {Toast} from '../../utils/popup.js'
+import parseHtml from '../../utils/html-parse.js'
+const API = {
+  用户使用协议: getProtocolApi,
+  隐私协议: getPrivacyPolicyApi,
+  
+  关于我们: getAboutUsApi,
+  新手教程: getAboutUsApi
+}
+export default {
+  data () {
+    return {
+      height: 'auto',
+      title: '',
+      requestApi: false,
+      editorContent: ''
+    }
+  },
+  computed: {},
+  onLoad (options) {
+    this.height = uni.getSystemInfoSync().safeArea.height + 'px'
+    this.requestApi = options.requestApi === 'true'
+    this.title = options.title
+    // 请求接口
+    if (this.requestApi) {
+      this.getContent()
+    } else {
+      this.editorContent = uni.getStorageSync('editorContent')
+    }
+    uni.setNavigationBarTitle({ title: options.title })
+  },
+  methods: {
+    // 请求接口
+    getContent () {
+      Toast('loading', '加载中…')
+      API[this.title]().then(data => {
+        this.editorContent = parseHtml(data)
+      }).finally(() => {
+        uni.hideLoading()
+      })
+    }
+  },
+  onHide () {
+    uni.removeStorageSync('editorContent')
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.editor-content {
+  padding: 24rpx 30rpx;
+  background: #fff;
+  &-article{
+    font-size: 28rpx;
+    line-height: 40rpx;
+  }
+}
+</style>

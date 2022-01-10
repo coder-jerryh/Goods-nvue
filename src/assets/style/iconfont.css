@@ -1,0 +1,185 @@
+@font-face {
+  font-family: "iconfont"; /* Project id 2526087 */
+  src: url('/assets/font/iconfont.ttf');
+}
+
+.iconfont {
+  font-family: "iconfont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-right:before {
+  content: "\e645";
+}
+
+.icon-good:before {
+  content: "\e778";
+}
+
+.icon-creative:before {
+  content: "\e719";
+}
+
+.icon-copy:before {
+  content: "\e690";
+}
+
+.icon-down:before {
+  content: "\e79b";
+}
+
+.icon-mobile:before {
+  content: "\e6a0";
+}
+
+.icon-edit:before {
+  content: "\e6aa";
+}
+
+.icon-find:before {
+  content: "\e80a";
+}
+
+.icon-time:before {
+  content: "\e65e";
+}
+
+.icon-round-close:before {
+  content: "\e7a7";
+}
+
+.icon-zan:before {
+  content: "\e63b";
+}
+
+.icon-tuijian1:before {
+  content: "\e60f";
+}
+
+.icon-tuijian:before {
+  content: "\e629";
+}
+
+.icon-video:before {
+  content: "\e7c7";
+}
+
+.icon-round-add:before {
+  content: "\e6d9";
+}
+
+.icon-on-star:before {
+  content: "\e61d";
+}
+
+.icon-off-star:before {
+  content: "\e61e";
+}
+
+.icon-half-star:before {
+  content: "\e627";
+}
+
+.icon-wx:before {
+  content: "\e65c";
+}
+
+.icon-box:before {
+  content: "\e712";
+}
+
+.icon-shop:before {
+  content: "\e676";
+}
+
+.icon-brand:before {
+  content: "\e63a";
+}
+
+.icon-top:before {
+  content: "\e69e";
+}
+
+.icon-gift:before {
+  content: "\e632";
+}
+
+.icon-cup:before {
+  content: "\e6bd";
+}
+
+.icon-checkboxs:before {
+  content: "\e6d4";
+}
+
+.icon-checkbox:before {
+  content: "\e6d5";
+}
+
+.icon-scan:before {
+  content: "\e689";
+}
+
+.icon-clear:before {
+  content: "\e62a";
+}
+
+.icon-delete:before {
+  content: "\e6b4";
+}
+
+.icon-more:before {
+  content: "\e610";
+}
+
+.icon-fill-close:before {
+  content: "\e658";
+}
+
+.icon-link:before {
+  content: "\e62e";
+}
+
+.icon-radios:before {
+  content: "\e656";
+}
+
+.icon-radio:before {
+  content: "\e6d7";
+}
+
+.icon-add:before {
+  content: "\e767";
+}
+
+.icon-close:before {
+  content: "\e646";
+}
+
+.icon-play:before {
+  content: "\e66e";
+}
+
+.icon-zuo:before {
+  content: "\e7c8";
+}
+
+.icon-camera:before {
+  content: "\e664";
+}
+
+.icon-you:before {
+  content: "\e62d";
+}
+
+.icon-xia:before {
+  content: "\e80b";
+}
+
+.icon-shang:before {
+  content: "\e80c";
+}
+

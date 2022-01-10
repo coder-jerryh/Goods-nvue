@@ -1,0 +1,70 @@
+<template>
+  <nav class="m-nav" :style="{paddingTop: showBack ? 0 : navTop + 'px', position, background}">
+		<image v-if="showBack" @click="back" class="m-nav-back v-ob" :style="{top: navTop + 7 + 'px'}" src="../../static/back.png"/>
+		<slot/>
+	</nav>
+</template>
+
+<script>
+	import mImage from '../m-image/index.nvue'
+	export default {
+		props: {
+			showBack: Boolean,
+			position: {
+				type: String,
+				default: 'static'
+			},
+			background: {
+				type: String,
+				default: 'transparent'
+			}
+		},
+		components: {
+			mImage
+		},
+		data () {
+			return {
+				navTop: 0
+			}
+		},
+		mounted () {
+			this.setStyle()
+		},
+		methods: {
+			back () {
+				uni.navigateBack()
+			},
+			setStyle () {
+				const safeArea = uni.getSystemInfoSync().safeArea
+				// this.barHeight = safeArea.bottom - safeArea.height + 'rpx'
+				// #ifdef APP-PLUS
+				// 导航栏高度
+				this.navTop = safeArea.top
+				// 导航栏电池、时间颜色
+				plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+				// #endif
+				
+				// #ifdef MP-WEIXIN
+				// 导航栏高度
+				this.navTop = uni.getMenuButtonBoundingClientRect().top
+				// #endif
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+	.m-nav {
+		top: 0;
+		left: 0;
+		right: 0;
+		z-index: 10;
+		&-back {
+			position: fixed;
+			left: 28rpx;
+			width: 40rpx;
+			height: 40rpx;
+			z-index: 1;
+		}
+	}
+</style>

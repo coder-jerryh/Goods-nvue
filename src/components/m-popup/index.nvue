@@ -1,0 +1,105 @@
+<template>
+  <div class="m-popup" v-if="showPopup">
+		<div class="m-popup-mask" :style="{opacity}" @click="$emit('input', false)"></div>
+		<div
+			class="m-popup-container"
+			:style="{transform: `translateY(${translateY})`}"
+			:class="{'m-popup-container-radius': radius}">
+			<div class="m-popup-title">
+				<text class="m-popup-title-h1">{{title}}</text>
+			</div>
+			<div class="m-popup-content">
+				<slot name='content'/>
+			</div>
+		</div>
+  </div>
+</template>
+
+<script>
+export default {
+  props: {
+		value: Boolean,
+		radius: {
+			type: Boolean,
+			default: true
+		},
+		title: String,
+		height: {
+			type: String,
+			default: '100%'
+		}
+	},
+  data () {
+    return {
+			translateY: '100%',
+			opacity: 0,
+			showPopup: false
+    }
+  },
+	watch: {
+		value () {
+			if (this.value) {
+				this.showPopup = true
+				this.translateY = this.height
+        this.$nextTick(() => {
+          const timer = setTimeout(() => {
+            this.opacity = 1
+            this.translateY = 0
+            clearTimeout(timer)
+          }, 20)
+        })
+			} else {
+				this.opacity = 0
+				this.translateY = this.height
+				this.$nextTick(() => {
+					const timer = setTimeout(() => {
+						this.showPopup = false
+						clearTimeout(timer)
+					}, 250)
+				})
+			}
+		}
+	},
+  created () {},
+	mounted () {
+	},
+  methods: {}
+}
+</script>
+
+<style lang='scss' scoped>
+	.m-popup {
+		/* 蒙版 */
+		&-mask {
+			@extend .fixed;
+			background-color: rgba(0, 0, 0, 0.5);
+			z-index: 999;
+			transition-property: opacity;
+			transition-duration: 0.25s;
+			transition-timing-function: ease;
+		}
+		&-container {
+			z-index: 9999;
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background-color: #fff;
+			transition-property: transform;
+			transition-duration: 0.25s;
+			transition-timing-function: ease;
+			&-radius {
+				border-radius: 20rpx 20rpx 0 0;
+			}
+		}
+		&-title {
+			flex-direction: row;
+			justify-content: center;
+			padding: 20rpx 0;
+			&-h1 {
+				color: #333;
+				font-size: 32rpx;
+			}
+		}
+	}
+</style>

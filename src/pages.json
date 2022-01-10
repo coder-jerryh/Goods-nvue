@@ -1,0 +1,195 @@
+{
+	"sitemapLocation": "sitemap.json",
+	"pages": [
+    {
+			"path": "pages/homePage/index",
+			"style": {
+				"navigationBarTextStyle": "black",
+				"enablePullDownRefresh": true,
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		{
+			"path": "pages/homePage/bloger",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+		{
+			"path": "pages/find/index",
+			"style": {
+				"navigationStyle": "custom",
+				"app-plus": {
+					"titleNView": false
+				}
+			}
+		},
+    {
+			"path": "pages/homePage/agreement",
+			"style": {
+				"navigationBarTitleText": "个人信息保护指引"
+			}
+		},
+		{
+			"path": "pages/score/index",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "积分任务"
+			}
+		},
+		{
+			"path": "pages/mine/index",
+			"style": {
+				"navigationBarTitleText": "我的"
+			}
+		},
+    {
+			"path": "pages/mine/exchangeVip",
+			"style": {
+				"navigationBarTitleText": "兑换会员"
+			}
+		},
+    {
+			"path": "pages/mine/userInfo",
+			"style": {
+				"navigationBarTitleText": "账号资料"
+			}
+		},
+    {
+			"path": "pages/mine/about",
+			"style": {
+				"navigationBarTitleText": "关于我们"
+			}
+		},
+		{
+			"path": "pages/mine/myFocus",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "我的订阅"
+			}
+		},
+		{
+			"path": "pages/mine/scoreNote",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "积分记录"
+			}
+		},
+    {
+			"path": "pages/mine/myLike",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "我的点赞"
+			}
+		},
+    {
+			"path": "pages/mine/myCollect",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "我的收藏"
+			}
+		},
+    {
+			"path": "pages/mine/systemMsg",
+			"style": {
+				"enablePullDownRefresh": true,
+				"navigationBarTitleText": "消息中心"
+			}
+		},
+		{
+			"path": "pages/homePage/downloadImage",
+			"style": {
+				"navigationBarTitleText": "下载图片"
+			}
+		},
+		{
+			"path": "pages/mine/recommend",
+			"style": {
+				"navigationBarTitleText": "推荐"
+			}
+		},
+		{
+			"path": "pages/mine/opinion",
+			"style": {
+				"navigationBarTitleText": "意见反馈"
+			}
+		},
+    {
+			"path": "pages/mine/report",
+			"style": {
+				"navigationBarTitleText": "举报"
+			}
+		},
+    {
+			"path": "pages/mine/login",
+			"style": {
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/common/editorPage",
+			"style": {
+				"navigationBarTitleText": "加载中…"
+			}
+		}
+	],
+	"globalStyle": {
+		// 标题字体颜色，black和light
+		"navigationBarTextStyle": "black",
+		// 标题背景色
+		"navigationBarBackgroundColor": "#fff",
+		// 页面背景底色
+		"backgroundColor": "#f5f6f7"
+	},
+	"tabBar": {
+		"color": "#666666",
+		"selectedColor": "#FF9B35",
+		"backgroundColor": "#fff",
+		"borderStyle": "white",
+		"list": [{
+				"selectedIconPath": "static/homes.png",
+				"iconPath": "static/home.png",
+				"pagePath": "pages/homePage/index",
+				"text": "首页"
+			},
+			{
+				"selectedIconPath": "static/finds.png",
+				"iconPath": "static/find.png",
+				"pagePath": "pages/find/index",
+				"text": "发现"
+			},
+			{
+				"selectedIconPath": "static/scores.png",
+				"iconPath": "static/score.png",
+				"pagePath": "pages/score/index",
+				"text": "积分任务"
+			},
+			{
+				"selectedIconPath": "static/mines.png",
+				"iconPath": "static/mine.png",
+				"pagePath": "pages/mine/index",
+				"text": "我的"
+			}
+		]
+	},
+	"permission": {
+		"scope.userLocation": {
+			"desc": "你的位置信息将用于获取位置"
+		}
+	},
+	"condition": {
+		"current": 0,
+		"list": [{
+			"name": "",
+			"path": "pages/homePage/index",
+			"query": ""
+		}]
+	}
+}

@@ -1,0 +1,145 @@
+<template>
+	<div class="container">
+		<m-scroll ref='mScroll' v-model='pages' @getData='getData'>
+      <ul class='focus-list'>
+        <li class='focus-list-item' v-for="(item, index) in list" :key='item.id' @click="toBloger(item)">
+          <!-- 头像 -->
+          <m-image class="focus-list-avatar" :src="item.avatar" :imageStyle="{width: '110rpx', height: '110rpx', borderRadius: '100rpx'}"/>
+          <div class="focus-list-title">
+            <text class="focus-list-h1">{{item.name}}</text>
+            <text class="focus-list-span">{{item.remark_name}}</text>
+          </div>
+          <button class="focus-list-btn" @click.stop="focusBloger($event, item)">
+            <image class="focus-list-check" src="../../static/check2.png"/><text class="focus-list-btn-text">已订阅</text>
+          </button>
+        </li>
+      </ul>
+    </m-scroll>
+  </div>
+</template>
+
+<script>
+	import mScroll from '../../components/m-scroll/index.nvue'
+  import {getMyFocuslogListApi} from '../../api/mine.js'
+  import {unFollowBlogerApi} from '../../api/homePage.js'
+  import mImage from '../../components/m-image/index.nvue'
+  import {Confirm, Toast} from '../../utils/popup.js'
+	
+  export default {
+		components: {
+			mScroll,
+      mImage
+		},
+		data () {
+			return {
+        pages: {
+          page: 1
+        },
+				list: []
+			}
+		},
+		onPullDownRefresh () {
+			this.$refs.mScroll.pullRefresh()
+		},
+		onReachBottom () {
+			this.$refs.mScroll.loadMore()
+		},
+		created () {
+			this.getData()
+		},
+		methods: {
+			getData () {
+        getMyFocuslogListApi(this.pages).then(({data}) => {
+          if (this.pages.page === 1) {
+            this.list = []
+          }
+          this.list = [...this.list, ...data.list]
+          this.pages.last_create_time = data.last_create_time
+          this.$refs.mScroll.loadSuccess({
+            total: this.list.length,
+            hasNextPage: data.has_more
+          })
+        })
+			},
+      firstPage () {
+        this.pages = { page: 1 }
+        this.getData()
+      },
+      // 博主页面
+			toBloger (item) {
+				uni.navigateTo({url: `/pages/homePage/bloger?id=${item.id}`})
+			},
+			// 刷新列表
+			changeItem (item, index) {
+				const list = [...this.list]
+				list[index] = {...item}
+				this.list = [...list]
+			},
+      focusBloger (e, item) {
+        Confirm(
+          '提示',
+          '确定取消订阅吗？',
+          '确定',
+          () => {
+            unFollowBlogerApi({id: item.id}).then(() => {
+              Toast('success', '已取消订阅！')
+              this.firstPage()
+            })
+          }
+        )
+        // #ifdef APP-NVUE
+        e.stopPropagation()
+        // #endif
+			}
+		}
+	}
+</script>
+
+<style lang='scss' scoped>
+  /* #ifndef APP-PLUS */
+  .container {
+    min-height: 100vh;
+		background: #f5f6f7;
+  }
+  /* #endif */
+	.focus-list {
+		&-item {
+			padding: 18rpx 28rpx;
+			background-color: #fff;
+			flex-direction: row;
+			align-items: center;
+			@extend .border-b;
+		}
+		&-h1 {
+			font-size: 32rpx;
+			color: #333;
+			margin-bottom: 6rpx;
+		}
+		&-span {
+			color: #999;
+			font-size: 26rpx;
+		}
+		&-title {
+			margin-left: 26rpx;
+			flex: 1;
+		}
+		&-btn {
+			width: 140rpx;
+			height: 50rpx;
+			border-radius: 100rpx;
+			background: #fff;
+			border: 1px;
+			border-style: solid;
+			border-color: #999;
+			&-text {
+				font-size: 26rpx;
+				color: #666;
+			}
+		}
+		&-check {
+			margin-right: 2px;
+			width: 25rpx;
+			height: 25rpx;
+		}
+	}
+</style>

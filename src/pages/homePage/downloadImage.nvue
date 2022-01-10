@@ -1,0 +1,191 @@
+<template>
+	<div>
+		<ul class='pics'>
+			<li
+				class='pics-li'
+				v-for="(item, index) in imageList"
+				:key='i'
+				:class="['pics-li-' + (index + 1), item.selected ? 'pics-li-border': '']"
+				 @click='select(index)'
+				>
+				<m-image class="pics-item" :src="item.url" :imageStyle="{width: '224rpx', height: '224rpx', borderRadius: '4rpx'}"/>
+				<span v-if="item.selected" class="pics-li-check">
+					<image class="pics-li-check-icon" src="../../static/check.png"/>
+				</span>
+			</li>
+		</ul>
+		<footer class='toolbar'>
+			<button class='toolbar-btn' @click="selectAll">
+				<text class="toolbar-btn-text">全选</text>
+			</button>
+			<button class='toolbar-btn toolbar-btn-orange' @click="downTips">
+				<text class="toolbar-btn-text toolbar-btn-text-orange">批量下载{{selectedList.length ? `(${selectedList.length}/${imageList.length})` : ''}}</text>
+			</button>
+		</footer>
+	</div>
+</template>
+
+<script>
+	import mImage from '../../components/m-image/index.nvue'
+	import {Toast, Confirm} from '../../utils/popup.js'
+  import {downloadFileApi} from '../../api/homePage.js'
+  import {mapState} from 'vuex'
+	export default {
+		components: {
+			mImage
+		},
+		data() {
+			return {
+				imageList: [],
+        reduceScore: 0,
+        blogId: ''
+			}
+		},
+		computed: {
+      ...mapState(['userInfo']),
+			selectedList () {
+				return this.imageList.filter(item => item.selected)
+			}
+		},
+		onLoad (options) {
+      this.blogId = options.blogId
+			// #ifdef APP-PLUS
+			plus.navigator.setStatusBarStyle('dark') //只支持dark和light
+			// #endif
+			
+			this.imageList = uni.getStorageSync('imageList').map(url => {
+				return {url, selected: false}
+			})
+		},
+		methods: {
+			select (i) {
+				this.imageList[i].selected = !this.imageList[i].selected
+			},
+			selectAll () {
+				this.imageList.forEach(item => item.selected = true)
+			},
+      downTips () {
+        if (!this.selectedList.length) {
+					return Toast('warning', '请选择图片')
+				}
+        // 不是会员且在当前页面没有下载过图片
+        if (!this.userInfo.is_vip && !this.reduceScore) {
+          Confirm(
+            '提示',
+            '下载图片扣除积分',
+            '确定下载',
+            () => {
+              downloadFileApi({id: this.blogId}).then(({data}) => {
+                this.downloadImage(0)
+                this.reduceScore = data.dec_integral
+              })
+            }
+          )
+        } else {
+          this.downloadImage(0)
+        }
+      },
+			downloadImage (current) {
+				const that = this
+				const total = this.selectedList.length
+				Toast('loading', `下载中${current + 1}/${total}`)
+				uni.downloadFile({
+					url: this.selectedList[current].url,
+					success: (res) =>{
+						if (res.statusCode === 200){
+							uni.saveImageToPhotosAlbum({
+								filePath: res.tempFilePath,
+								success () {
+									if (current === total - 1) {
+                    if (!that.userInfo.is_vip) {
+                      Toast('none', `图片保存成功，积分-${that.reduceScore}`)
+                    } else {
+                      Toast('none', '图片保存成功！')
+                    }
+									} else {
+										that.downloadImage(current + 1)
+									}
+								},
+								fail (e) {
+									Toast('none', '保存失败，请稍后再试~')
+								}
+							})
+						}
+					}
+				})
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	.pics {
+		padding: 0 19rpx;
+		flex-direction: row;
+		flex-wrap: wrap;
+		margin-bottom: 100rpx;
+		&-li {
+			position: relative;
+			margin: 8rpx 0;
+			border-width: 2px;
+			border-style: solid;
+			border-color: transparent;
+			border-radius: 4rpx;
+			overflow: hidden;
+			position: relative;
+			&-2, &-5, &-8, &-11, &-14, &-17, &-20 {
+				margin: 8rpx;
+			}
+			&-border {
+				border-width: 2px;
+				border-style: solid;
+				border-color: $color;
+			}
+			&-check {
+				position: absolute;
+				top: 0;
+				right: 0;
+				z-index: 20;
+				background: $color;
+				padding: 0 6rpx 3rpx;
+				border-radius: 0 0 0 4rpx;
+				&-icon {
+					width: 30rpx;
+					height: 30rpx;
+				}
+			}
+		}
+	}
+	.toolbar {
+		position: fixed;
+		bottom: 0;
+		/* #ifndef APP-PLUS */
+		bottom: calc(env(safe-area-inset-bottom));
+		/* #endif */
+		right: 0;
+		left: 0;
+		height: 100rpx;
+		flex-direction: row;
+		align-items: center;
+		border-top-width: 1rpx;
+		border-style: solid;
+		border-color: $border;
+		&-btn {
+			flex: 1;
+			height: 100rpx;
+			border: 0;
+			border-radius: 0;
+			background: #fff;
+			&-orange {
+				background: $color;
+			}
+			&-text {
+				font-size: 30rpx;
+				color: #333;
+				&-orange {
+					color: #fff;
+				}
+			}
+		}
+	}
+</style>
